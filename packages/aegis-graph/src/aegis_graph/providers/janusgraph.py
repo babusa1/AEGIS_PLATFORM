@@ -1,19 +1,18 @@
 """
-JanusGraph Provider
+JanusGraph Provider - Real Implementation
 
-Gremlin-based implementation for JanusGraph (local development & on-prem).
+Production Gremlin implementation for JanusGraph.
 """
 
-from typing import Any
-
+from typing import Any, AsyncIterator
 import structlog
-from gremlin_python.driver import client, serializer
-from gremlin_python.driver.driver_remote_connection import DriverRemoteConnection
-from gremlin_python.process.anonymous_traversal import traversal
-from gremlin_python.process.graph_traversal import GraphTraversalSource, __
-from tenacity import retry, stop_after_attempt, wait_exponential
+
+from gremlin_python.process.graph_traversal import __
+from gremlin_python.process.traversal import T, P, Order
 
 from aegis_graph.providers.base import BaseGraphProvider
+from aegis_graph.connection import GraphConnectionPool, get_graph_pool
+from aegis_graph.schema import SCHEMA
 
 logger = structlog.get_logger(__name__)
 
@@ -22,241 +21,249 @@ class JanusGraphProvider(BaseGraphProvider):
     """
     JanusGraph implementation using Gremlin.
     
-    Use for:
-    - Local development (docker-compose)
-    - On-premise deployments
-    - Testing without cloud dependencies
+    For local development and on-premise deployments.
     """
     
-    def __init__(self, connection_url: str, **kwargs):
-        super().__init__(connection_url, **kwargs)
-        self._client: client.Client | None = None
-        self._g: GraphTraversalSource | None = None
+    def __init__(
+        self,
+        host: str = "localhost",
+        port: int = 8182,
+        pool_size: int = 10,
+        **kwargs
+    ):
+        self.host = host
+        self.port = port
+        self.pool_size = pool_size
+        self._pool: GraphConnectionPool | None = None
     
-    async def connect(self) -> None:
-        """Establish connection to JanusGraph."""
-        try:
-            logger.info("Connecting to JanusGraph", url=self.connection_url)
-            
-            self._client = client.Client(
-                self.connection_url,
-                "g",
-                message_serializer=serializer.GraphSONSerializersV3d0(),
-            )
-            
-            connection = DriverRemoteConnection(self.connection_url, "g")
-            self._g = traversal().withRemote(connection)
-            
-            self._connected = True
-            logger.info("Connected to JanusGraph")
-            
-        except Exception as e:
-            logger.error("Failed to connect to JanusGraph", error=str(e))
-            raise
+    async def initialize(self) -> None:
+        """Initialize connection pool."""
+        self._pool = await get_graph_pool(
+            host=self.host,
+            port=self.port,
+            pool_size=self.pool_size
+        )
+        logger.info("JanusGraph provider initialized", host=self.host, port=self.port)
     
-    async def disconnect(self) -> None:
-        """Close JanusGraph connection."""
-        if self._client:
-            self._client.close()
-            self._client = None
-            self._g = None
-            self._connected = False
-            logger.info("Disconnected from JanusGraph")
+    async def close(self) -> None:
+        """Close connection pool."""
+        if self._pool:
+            await self._pool.close()
     
-    @property
-    def g(self) -> GraphTraversalSource:
-        """Get Gremlin traversal source."""
-        if self._g is None:
-            raise RuntimeError("Not connected to JanusGraph")
-        return self._g
+    async def health_check(self) -> dict:
+        """Check JanusGraph health."""
+        if not self._pool:
+            return {"status": "not_initialized"}
+        return await self._pool.health_check()
     
     # ==================== VERTEX OPERATIONS ====================
     
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
     async def create_vertex(
         self,
         label: str,
-        properties: dict[str, Any],
-        tenant_id: str = "default"
+        properties: dict[str, Any]
     ) -> str:
-        """Create a vertex in JanusGraph."""
-        props = {**properties, "tenant_id": tenant_id}
-        
-        # Build Gremlin query
-        query = f"g.addV('{label}')"
-        for key, value in props.items():
-            if value is not None:
-                query += f".property('{key}', {repr(value)})"
-        query += ".id()"
-        
-        result = await self.execute_query(query)
-        vertex_id = str(result[0]) if result else None
-        
-        logger.debug("Created vertex", label=label, vertex_id=vertex_id)
-        return vertex_id
+        """Create a vertex."""
+        async with self._pool.get_traversal() as g:
+            query = g.addV(label)
+            
+            for key, value in properties.items():
+                if value is not None:
+                    query = query.property(key, value)
+            
+            result = await query.id().next()
+            
+            logger.debug("Created vertex", label=label, id=properties.get("id"))
+            return str(result)
     
-    async def get_vertex(self, vertex_id: str) -> dict[str, Any] | None:
-        """Get vertex by ID."""
-        query = f"g.V({vertex_id}).valueMap(true)"
-        result = await self.execute_query(query)
-        
-        if not result:
+    async def get_vertex(
+        self,
+        label: str,
+        vertex_id: str,
+        tenant_id: str | None = None
+    ) -> dict | None:
+        """Get a vertex by ID."""
+        async with self._pool.get_traversal() as g:
+            query = g.V().has(label, "id", vertex_id)
+            
+            if tenant_id:
+                query = query.has("tenant_id", tenant_id)
+            
+            results = await query.valueMap(True).toList()
+            
+            if results:
+                return self._normalize_vertex(results[0])
             return None
-        
-        # Convert Gremlin valueMap to flat dict
-        vertex = self._flatten_value_map(result[0])
-        return vertex
     
     async def update_vertex(
         self,
+        label: str,
         vertex_id: str,
-        properties: dict[str, Any]
+        properties: dict[str, Any],
+        tenant_id: str | None = None
     ) -> bool:
         """Update vertex properties."""
-        query = f"g.V({vertex_id})"
-        for key, value in properties.items():
-            if value is not None:
-                query += f".property('{key}', {repr(value)})"
-        query += ".id()"
-        
-        result = await self.execute_query(query)
-        return len(result) > 0
+        async with self._pool.get_traversal() as g:
+            query = g.V().has(label, "id", vertex_id)
+            
+            if tenant_id:
+                query = query.has("tenant_id", tenant_id)
+            
+            for key, value in properties.items():
+                if key not in ("id", "tenant_id"):
+                    query = query.property(key, value)
+            
+            results = await query.id().toList()
+            return len(results) > 0
     
-    async def delete_vertex(self, vertex_id: str) -> bool:
-        """Delete vertex and its edges."""
-        query = f"g.V({vertex_id}).drop()"
-        await self.execute_query(query)
-        return True  # Gremlin drop() doesn't return result
+    async def delete_vertex(
+        self,
+        label: str,
+        vertex_id: str,
+        tenant_id: str | None = None
+    ) -> bool:
+        """Delete a vertex."""
+        async with self._pool.get_traversal() as g:
+            query = g.V().has(label, "id", vertex_id)
+            
+            if tenant_id:
+                query = query.has("tenant_id", tenant_id)
+            
+            count = await query.drop().iterate()
+            return True
     
     async def find_vertices(
         self,
         label: str,
-        filters: dict[str, Any] | None = None,
-        tenant_id: str = "default",
-        limit: int = 100
-    ) -> list[dict[str, Any]]:
-        """Find vertices by label and filters."""
-        query = f"g.V().hasLabel('{label}').has('tenant_id', '{tenant_id}')"
-        
-        if filters:
+        filters: dict[str, Any],
+        tenant_id: str | None = None,
+        limit: int = 100,
+        offset: int = 0
+    ) -> list[dict]:
+        """Find vertices by filters."""
+        async with self._pool.get_traversal() as g:
+            query = g.V().hasLabel(label)
+            
+            if tenant_id:
+                query = query.has("tenant_id", tenant_id)
+            
             for key, value in filters.items():
-                query += f".has('{key}', {repr(value)})"
-        
-        query += f".limit({limit}).valueMap(true)"
-        
-        results = await self.execute_query(query)
-        return [self._flatten_value_map(r) for r in results]
+                query = query.has(key, value)
+            
+            results = await (
+                query
+                .range(offset, offset + limit)
+                .valueMap(True)
+                .toList()
+            )
+            
+            return [self._normalize_vertex(v) for v in results]
     
     # ==================== EDGE OPERATIONS ====================
     
     async def create_edge(
         self,
-        from_vertex_id: str,
-        to_vertex_id: str,
-        label: str,
-        properties: dict[str, Any] | None = None
+        from_label: str,
+        from_id: str,
+        edge_label: str,
+        to_label: str,
+        to_id: str,
+        properties: dict[str, Any] | None = None,
+        tenant_id: str | None = None
     ) -> str:
-        """Create an edge between vertices."""
-        query = f"g.V({from_vertex_id}).addE('{label}').to(g.V({to_vertex_id}))"
-        
-        if properties:
-            for key, value in properties.items():
-                if value is not None:
-                    query += f".property('{key}', {repr(value)})"
-        
-        query += ".id()"
-        result = await self.execute_query(query)
-        return str(result[0]) if result else None
+        """Create an edge."""
+        async with self._pool.get_traversal() as g:
+            from_query = g.V().has(from_label, "id", from_id)
+            to_query = __.V().has(to_label, "id", to_id)
+            
+            if tenant_id:
+                from_query = from_query.has("tenant_id", tenant_id)
+                to_query = to_query.has("tenant_id", tenant_id)
+            
+            query = from_query.addE(edge_label).to(to_query)
+            
+            if properties:
+                for key, value in properties.items():
+                    if value is not None:
+                        query = query.property(key, value)
+            
+            result = await query.id().next()
+            return str(result)
     
     async def get_edges(
         self,
-        vertex_id: str,
-        direction: str = "both",
-        edge_label: str | None = None
-    ) -> list[dict[str, Any]]:
-        """Get edges connected to a vertex."""
-        dir_method = {"in": "inE", "out": "outE", "both": "bothE"}[direction]
-        
-        query = f"g.V({vertex_id}).{dir_method}()"
-        if edge_label:
-            query = f"g.V({vertex_id}).{dir_method}('{edge_label}')"
-        
-        query += ".valueMap(true)"
-        results = await self.execute_query(query)
-        return [self._flatten_value_map(r) for r in results]
-    
-    async def delete_edge(self, edge_id: str) -> bool:
-        """Delete an edge."""
-        query = f"g.E({edge_id}).drop()"
-        await self.execute_query(query)
-        return True
+        from_label: str,
+        from_id: str,
+        edge_label: str | None = None,
+        direction: str = "out",
+        tenant_id: str | None = None
+    ) -> list[dict]:
+        """Get edges from a vertex."""
+        async with self._pool.get_traversal() as g:
+            query = g.V().has(from_label, "id", from_id)
+            
+            if tenant_id:
+                query = query.has("tenant_id", tenant_id)
+            
+            if direction == "out":
+                edge_query = query.outE(edge_label) if edge_label else query.outE()
+            elif direction == "in":
+                edge_query = query.inE(edge_label) if edge_label else query.inE()
+            else:
+                edge_query = query.bothE(edge_label) if edge_label else query.bothE()
+            
+            results = await (
+                edge_query
+                .project("edge", "target")
+                .by(__.valueMap(True))
+                .by(__.inV().valueMap(True) if direction == "out" else __.outV().valueMap(True))
+                .toList()
+            )
+            
+            return results
     
     # ==================== TRAVERSAL OPERATIONS ====================
     
     async def traverse(
         self,
-        start_vertex_id: str,
-        path_pattern: list[str],
-        max_depth: int = 3
-    ) -> list[dict[str, Any]]:
-        """Traverse graph following edge pattern."""
-        query = f"g.V({start_vertex_id})"
-        
-        for i, edge_label in enumerate(path_pattern[:max_depth]):
-            query += f".out('{edge_label}')"
-        
-        query += ".valueMap(true)"
-        results = await self.execute_query(query)
-        return [self._flatten_value_map(r) for r in results]
+        start_label: str,
+        start_id: str,
+        path: list[str],
+        tenant_id: str | None = None
+    ) -> list[dict]:
+        """Traverse the graph following a path of edge labels."""
+        async with self._pool.get_traversal() as g:
+            query = g.V().has(start_label, "id", start_id)
+            
+            if tenant_id:
+                query = query.has("tenant_id", tenant_id)
+            
+            for edge_label in path:
+                query = query.out(edge_label)
+            
+            results = await query.valueMap(True).toList()
+            return [self._normalize_vertex(v) for v in results]
     
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
     async def execute_query(
         self,
-        query: str,
+        query_string: str,
         bindings: dict[str, Any] | None = None
     ) -> list[Any]:
-        """Execute raw Gremlin query."""
-        if self._client is None:
-            raise RuntimeError("Not connected to JanusGraph")
-        
-        logger.debug("Executing Gremlin query", query=query[:100])
-        
-        try:
-            result_set = self._client.submit(query, bindings or {})
-            return result_set.all().result()
-        except Exception as e:
-            logger.error("Gremlin query failed", query=query[:100], error=str(e))
-            raise
-    
-    # ==================== HEALTH & ADMIN ====================
-    
-    async def health_check(self) -> bool:
-        """Check JanusGraph health."""
-        try:
-            await self.execute_query("g.V().limit(1).count()")
-            return True
-        except Exception:
-            return False
-    
-    async def get_stats(self) -> dict[str, Any]:
-        """Get graph statistics."""
-        vertex_count = await self.execute_query("g.V().count()")
-        edge_count = await self.execute_query("g.E().count()")
-        
-        return {
-            "provider": "janusgraph",
-            "vertex_count": vertex_count[0] if vertex_count else 0,
-            "edge_count": edge_count[0] if edge_count else 0,
-        }
+        """Execute a raw Gremlin query string."""
+        async with self._pool.get_connection() as conn:
+            result = await conn.submit(query_string, bindings or {})
+            return await result.all().result()
     
     # ==================== HELPERS ====================
     
-    def _flatten_value_map(self, value_map: dict) -> dict[str, Any]:
-        """Convert Gremlin valueMap(true) to flat dictionary."""
+    def _normalize_vertex(self, vertex_map: dict) -> dict:
+        """Normalize JanusGraph vertex map to simple dict."""
         result = {}
-        for key, value in value_map.items():
-            if key in ("id", "label"):
-                result[key] = value
+        for key, value in vertex_map.items():
+            if key == T.id:
+                result["_graph_id"] = value
+            elif key == T.label:
+                result["_label"] = value
             elif isinstance(value, list) and len(value) == 1:
                 result[key] = value[0]
             else:

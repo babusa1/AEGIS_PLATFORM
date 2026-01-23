@@ -188,9 +188,14 @@ Real-time perception-to-action loop:
 | **Graph Database** | JanusGraph (dev) / Neptune (prod) | ✅ Abstraction layer built |
 | **Ontology** | FHIR R4 + OMOP CDM Pydantic models | ✅ 40+ models, 19+ sources |
 | **API Layer** | FastAPI + JWT auth | ✅ Demo working |
-| **LLM Gateway** | Bedrock (primary) + Gemini/OpenAI | 🔄 Phase 4 |
-| **Agent Framework** | LangGraph orchestration | 🔄 Phase 4 |
-| **Multi-tenancy** | Schema-per-tenant | 🔄 Phase 3 |
+| **OIDC Auth** | Cognito / Auth0 / Okta | ✅ Provider abstraction |
+| **PBAC** | Purpose-Based Access Control | ✅ HIPAA-compliant |
+| **Multi-tenancy** | Schema-per-tenant + TenantContext | ✅ Isolation built |
+| **Audit Logging** | PHI access tracking | ✅ HIPAA compliance |
+| **LLM Gateway** | Bedrock (primary) + OpenAI fallback | ✅ Multi-provider with failover |
+| **Agent Framework** | ReAct agents with tool use | ✅ Patient360, CareGap, Denial agents |
+| **Tool Registry** | Healthcare tools (graph, clinical, RCM) | ✅ 10+ tools registered |
+| **Human-in-the-Loop** | Approval workflows | ✅ Built for sensitive actions |
 | **Event Streaming** | Kafka/MSK | 📋 Planned |
 | **CI/CD** | GitHub Actions | ✅ Demo verification |
 
@@ -251,19 +256,19 @@ Real-time perception-to-action loop:
 - [x] 19+ data source coverage
 - [x] Monorepo structure
 
-### Phase 3: Auth & Multi-tenancy 🔄 NEXT
-- [ ] OIDC provider abstraction (Cognito/Auth0/Okta)
-- [ ] Purpose-Based Access Control (PBAC)
-- [ ] Schema-per-tenant isolation
-- [ ] Audit logging
+### Phase 3: Auth & Multi-tenancy ✅ COMPLETE
+- [x] OIDC provider abstraction (Cognito/Auth0/Okta)
+- [x] Purpose-Based Access Control (PBAC)
+- [x] Schema-per-tenant isolation
+- [x] Audit logging
 
-### Phase 4: AI/Agent Layer
-- [ ] LLM Gateway (multi-provider)
-- [ ] LangGraph agent orchestration
-- [ ] Tool registry
-- [ ] Human-in-the-loop workflows
+### Phase 4: AI/Agent Layer ✅ COMPLETE
+- [x] LLM Gateway (Bedrock + OpenAI failover)
+- [x] Agent framework (ReAct-style)
+- [x] Tool registry (10+ healthcare tools)
+- [x] Human-in-the-loop workflows
 
-### Phase 5: Use Cases
+### Phase 5: Use Cases 🔄 NEXT
 - [ ] Patient 360 (unified view)
 - [ ] RCM/Denial Management
 - [ ] Care Gaps identification
