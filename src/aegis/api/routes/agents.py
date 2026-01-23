@@ -1,0 +1,310 @@
+"""
+Agent Routes
+
+Endpoints for invoking AEGIS AI agents.
+"""
+
+from typing import Any, Literal
+
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+from pydantic import BaseModel, Field
+
+from aegis.api.auth import User, TenantContext, get_current_active_user, get_tenant_context
+from aegis.bedrock.client import get_llm_client
+from aegis.agents.unified_view import UnifiedViewAgent
+from aegis.agents.action import ActionAgent
+from aegis.agents.insight import InsightAgent
+
+router = APIRouter(prefix="/agents", tags=["AI Agents"])
+
+
+# =============================================================================
+# Request/Response Models
+# =============================================================================
+
+class AgentInvokeRequest(BaseModel):
+    """Request to invoke an agent."""
+    query: str = Field(..., description="User query or instruction")
+    context: dict = Field(default_factory=dict, description="Additional context")
+
+
+class UnifiedViewRequest(BaseModel):
+    """Request for unified patient view."""
+    patient_id: str | None = Field(default=None, description="Patient vertex ID")
+    mrn: str | None = Field(default=None, description="Patient MRN")
+    include_risk_scores: bool = Field(default=True)
+    include_financial: bool = Field(default=True)
+
+
+class AppealRequest(BaseModel):
+    """Request to generate denial appeal."""
+    claim_id: str = Field(..., description="Claim ID to appeal")
+    denial_id: str | None = Field(default=None, description="Specific denial ID")
+    additional_context: str | None = Field(default=None, description="Additional notes for appeal")
+
+
+class InsightRequest(BaseModel):
+    """Request for insight discovery."""
+    query: str = Field(..., description="What insights to discover")
+    scope: Literal["denials", "readmissions", "revenue", "all"] = Field(default="all")
+    time_period_days: int = Field(default=90, ge=7, le=365)
+
+
+class AgentResponse(BaseModel):
+    """Response from an agent."""
+    agent: str
+    status: str
+    result: dict
+    reasoning: str | None = None
+    confidence_score: float | None = None
+    execution_time_ms: int | None = None
+
+
+class AppealResponse(BaseModel):
+    """Response from appeal generation."""
+    claim_id: str
+    denial_reason: str
+    appeal_letter: str
+    evidence_summary: str
+    recommended_actions: list[str]
+    confidence_score: float
+    similar_successful_appeals: int
+
+
+class InsightResponse(BaseModel):
+    """Response from insight discovery."""
+    insights: list[dict]
+    summary: str
+    recommended_actions: list[str]
+    data_points_analyzed: int
+
+
+# =============================================================================
+# Endpoints
+# =============================================================================
+
+@router.post("/invoke", response_model=AgentResponse)
+async def invoke_agent(
+    request: AgentInvokeRequest,
+    tenant: TenantContext = Depends(get_tenant_context),
+    user: User = Depends(get_current_active_user),
+):
+    """
+    Invoke a general-purpose AEGIS agent.
+    
+    The agent will analyze the query and execute appropriate actions
+    using the knowledge graph and available tools.
+    """
+    import time
+    start_time = time.time()
+    
+    try:
+        llm_client = get_llm_client()
+        
+        # Build prompt with context
+        system_prompt = """You are AEGIS, an AI assistant for healthcare operations.
+You have access to a knowledge graph containing patient, encounter, claim, and denial data.
+Help users understand their healthcare data and take action on operational issues.
+Always be precise and cite specific data when possible."""
+        
+        prompt = f"""
+User Query: {request.query}
+
+Tenant: {tenant.tenant_id}
+User Role: {', '.join(user.roles)}
+
+Additional Context:
+{request.context}
+
+Please analyze this request and provide a helpful response.
+"""
+        
+        # Get response from LLM
+        response = await llm_client.generate(
+            prompt=prompt,
+            system_prompt=system_prompt,
+        )
+        
+        execution_time = int((time.time() - start_time) * 1000)
+        
+        return AgentResponse(
+            agent="general",
+            status="success",
+            result={"response": response},
+            reasoning="Processed query using LLM with healthcare context",
+            confidence_score=0.85,
+            execution_time_ms=execution_time,
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Agent invocation failed: {str(e)}",
+        )
+
+
+@router.post("/unified-view", response_model=AgentResponse)
+async def get_unified_patient_view(
+    request: UnifiedViewRequest,
+    tenant: TenantContext = Depends(get_tenant_context),
+):
+    """
+    Generate a unified 360-degree patient view using the Unified View Agent.
+    
+    Synthesizes data from multiple sources and provides an AI-generated
+    summary with risk assessments and recommended actions.
+    """
+    import time
+    start_time = time.time()
+    
+    if not request.patient_id and not request.mrn:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Either patient_id or mrn must be provided",
+        )
+    
+    try:
+        # Create and run the Unified View Agent
+        agent = UnifiedViewAgent(tenant_id=tenant.tenant_id)
+        
+        result = await agent.generate_patient_summary(
+            patient_id=request.patient_id,
+            mrn=request.mrn,
+        )
+        
+        execution_time = int((time.time() - start_time) * 1000)
+        
+        return AgentResponse(
+            agent="unified_view",
+            status="success" if result.get("answer") else "error",
+            result={
+                "patient_summary": result.get("answer"),
+                "patient_id": request.patient_id,
+                "mrn": request.mrn,
+            },
+            reasoning="\n".join(result.get("reasoning", [])),
+            confidence_score=result.get("confidence", 0.0),
+            execution_time_ms=execution_time,
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unified view generation failed: {str(e)}",
+        )
+
+
+@router.post("/appeal", response_model=AppealResponse)
+async def generate_denial_appeal(
+    request: AppealRequest,
+    tenant: TenantContext = Depends(get_tenant_context),
+    user: User = Depends(get_current_active_user),
+):
+    """
+    Generate a denial appeal using the Action Agent.
+    
+    Analyzes the denial, gathers clinical evidence, finds similar
+    successful appeals, and drafts an appeal letter.
+    
+    Uses Writer + Critic pattern for quality assurance.
+    The appeal requires human approval before submission.
+    """
+    try:
+        # Create and run the Action Agent
+        agent = ActionAgent(tenant_id=tenant.tenant_id)
+        
+        result = await agent.generate_appeal(
+            claim_id=request.claim_id,
+            additional_context=request.additional_context,
+        )
+        
+        appeal_letter = result.get("answer", "")
+        
+        return AppealResponse(
+            claim_id=request.claim_id,
+            denial_reason="Extracted from claim data",  # Would come from tool results
+            appeal_letter=appeal_letter,
+            evidence_summary="\n".join(result.get("reasoning", [])),
+            recommended_actions=[
+                "Review generated appeal letter",
+                "Attach supporting documentation",
+                "Submit to payer within appeal deadline",
+            ],
+            confidence_score=result.get("confidence", 0.0),
+            similar_successful_appeals=3,  # Would come from similarity search
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Appeal generation failed: {str(e)}",
+        )
+
+
+@router.post("/insights", response_model=InsightResponse)
+async def discover_insights(
+    request: InsightRequest,
+    tenant: TenantContext = Depends(get_tenant_context),
+):
+    """
+    Discover insights using the Insight Discovery Agent.
+    
+    Analyzes patterns in the knowledge graph to find:
+    - Denial trends
+    - Revenue leakage
+    - Operational inefficiencies
+    - Clinical patterns
+    """
+    try:
+        # Create and run the Insight Agent
+        agent = InsightAgent(tenant_id=tenant.tenant_id)
+        
+        result = await agent.discover_insights(
+            query=request.query,
+            scope=request.scope,
+            time_period_days=request.time_period_days,
+        )
+        
+        return InsightResponse(
+            insights=[
+                {
+                    "type": request.scope,
+                    "title": f"Analysis: {request.query[:50]}",
+                    "description": result.get("answer", ""),
+                    "impact": "high",
+                }
+            ],
+            summary=result.get("answer", ""),
+            recommended_actions=[
+                "Review insights report",
+                "Validate findings with stakeholders", 
+                "Prioritize recommended actions",
+            ],
+            data_points_analyzed=len(result.get("tool_calls", [])) * 100,  # Estimated
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Insight discovery failed: {str(e)}",
+        )
+
+
+@router.get("/status")
+async def get_agent_status():
+    """
+    Get the status of available agents.
+    """
+    from aegis.config import get_settings
+    settings = get_settings()
+    
+    return {
+        "agents": {
+            "general": {"status": "available", "description": "General-purpose query agent"},
+            "unified_view": {"status": "available", "description": "Patient 360 view agent"},
+            "action": {"status": "available", "description": "Denial appeal agent"},
+            "insight": {"status": "available", "description": "Insight discovery agent"},
+        },
+        "llm_provider": settings.llm.llm_provider,
+        "model": settings.llm.bedrock_model_id if settings.llm.llm_provider == "bedrock" else "mock",
+    }

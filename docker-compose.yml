@@ -1,0 +1,185 @@
+# AEGIS Local Development Environment
+# Run: docker-compose up -d
+
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # JanusGraph (Neptune-compatible Graph Database)
+  # ==========================================================================
+  janusgraph:
+    image: janusgraph/janusgraph:1.0.0
+    container_name: aegis-janusgraph
+    ports:
+      - "8182:8182"  # Gremlin Server
+    environment:
+      - JAVA_OPTIONS=-Xms512m -Xmx1024m
+    volumes:
+      - janusgraph_data:/var/lib/janusgraph
+    healthcheck:
+      test: ["CMD", "bin/gremlin.sh", "-e", "scripts/empty-sample.groovy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - aegis-network
+
+  # ==========================================================================
+  # OpenSearch (Vector Database + Search)
+  # ==========================================================================
+  opensearch:
+    image: opensearchproject/opensearch:2.11.1
+    container_name: aegis-opensearch
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - DISABLE_SECURITY_PLUGIN=true  # For local dev only
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "9200:9200"  # REST API
+      - "9600:9600"  # Performance Analyzer
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - aegis-network
+
+  # ==========================================================================
+  # OpenSearch Dashboards (Optional - for visualization)
+  # Uncomment below to enable - requires: docker pull opensearchproject/opensearch-dashboards:2.11.1
+  # ==========================================================================
+  # opensearch-dashboards:
+  #   image: opensearchproject/opensearch-dashboards:2.11.1
+  #   container_name: aegis-opensearch-dashboards
+  #   ports:
+  #     - "5601:5601"
+  #   environment:
+  #     - OPENSEARCH_HOSTS=["http://opensearch:9200"]
+  #     - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
+  #   depends_on:
+  #     - opensearch
+  #   networks:
+  #     - aegis-network
+
+  # ==========================================================================
+  # Apache Kafka (Event Streaming)
+  # ==========================================================================
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: aegis-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_log:/var/lib/zookeeper/log
+    networks:
+      - aegis-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: aegis-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - aegis-network
+
+  # ==========================================================================
+  # Kafka UI (Optional - for debugging)
+  # ==========================================================================
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: aegis-kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=aegis-local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:29092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+    depends_on:
+      - kafka
+    networks:
+      - aegis-network
+
+  # ==========================================================================
+  # Redis (Caching & Session Storage)
+  # ==========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: aegis-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - aegis-network
+
+  # ==========================================================================
+  # DynamoDB Local (State Storage - optional)
+  # ==========================================================================
+  dynamodb-local:
+    image: amazon/dynamodb-local:latest
+    container_name: aegis-dynamodb
+    ports:
+      - "8000:8000"
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /data"
+    volumes:
+      - dynamodb_data:/data
+    networks:
+      - aegis-network
+
+# ==========================================================================
+# Networks
+# ==========================================================================
+networks:
+  aegis-network:
+    driver: bridge
+
+# ==========================================================================
+# Volumes
+# ==========================================================================
+volumes:
+  janusgraph_data:
+  opensearch_data:
+  zookeeper_data:
+  zookeeper_log:
+  kafka_data:
+  redis_data:
+  dynamodb_data:

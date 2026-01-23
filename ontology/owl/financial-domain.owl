@@ -1,0 +1,415 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns="http://aegis.health/ontology/financial#"
+     xml:base="http://aegis.health/ontology/financial"
+     xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:xml="http://www.w3.org/XML/1998/namespace"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+     xmlns:core="http://aegis.health/ontology/core#"
+     xmlns:clinical="http://aegis.health/ontology/clinical#">
+
+    <owl:Ontology rdf:about="http://aegis.health/ontology/financial">
+        <rdfs:label>AEGIS Financial Domain Ontology</rdfs:label>
+        <rdfs:comment>Financial entities: Claim, Denial, Payment, Appeal, Authorization</rdfs:comment>
+        <owl:versionInfo>0.1.0</owl:versionInfo>
+        <owl:imports rdf:resource="http://aegis.health/ontology/core"/>
+        <owl:imports rdf:resource="http://aegis.health/ontology/clinical"/>
+    </owl:Ontology>
+
+    <!-- ============================================== -->
+    <!-- CLASSES - Financial Entities                   -->
+    <!-- ============================================== -->
+
+    <!-- Payer -->
+    <owl:Class rdf:about="#Payer">
+        <rdfs:label>Payer</rdfs:label>
+        <rdfs:comment>Insurance payer organization</rdfs:comment>
+        <rdfs:subClassOf rdf:resource="http://aegis.health/ontology/core#Organization"/>
+    </owl:Class>
+
+    <!-- Coverage -->
+    <owl:Class rdf:about="#Coverage">
+        <rdfs:label>Coverage</rdfs:label>
+        <rdfs:comment>Patient insurance coverage</rdfs:comment>
+    </owl:Class>
+
+    <!-- Claim -->
+    <owl:Class rdf:about="#Claim">
+        <rdfs:label>Claim</rdfs:label>
+        <rdfs:comment>A healthcare claim (professional or institutional)</rdfs:comment>
+    </owl:Class>
+
+    <!-- ClaimLine -->
+    <owl:Class rdf:about="#ClaimLine">
+        <rdfs:label>Claim Line</rdfs:label>
+        <rdfs:comment>Individual service line on a claim</rdfs:comment>
+    </owl:Class>
+
+    <!-- Denial -->
+    <owl:Class rdf:about="#Denial">
+        <rdfs:label>Denial</rdfs:label>
+        <rdfs:comment>A claim denial from a payer</rdfs:comment>
+    </owl:Class>
+
+    <!-- Appeal -->
+    <owl:Class rdf:about="#Appeal">
+        <rdfs:label>Appeal</rdfs:label>
+        <rdfs:comment>An appeal against a denial</rdfs:comment>
+    </owl:Class>
+
+    <!-- Payment -->
+    <owl:Class rdf:about="#Payment">
+        <rdfs:label>Payment</rdfs:label>
+        <rdfs:comment>A payment from payer to provider</rdfs:comment>
+    </owl:Class>
+
+    <!-- Authorization -->
+    <owl:Class rdf:about="#Authorization">
+        <rdfs:label>Authorization</rdfs:label>
+        <rdfs:comment>Prior authorization for a service</rdfs:comment>
+    </owl:Class>
+
+    <!-- Contract -->
+    <owl:Class rdf:about="#Contract">
+        <rdfs:label>Contract</rdfs:label>
+        <rdfs:comment>Payer-Provider contract with fee schedules</rdfs:comment>
+    </owl:Class>
+
+    <!-- ============================================== -->
+    <!-- DATA PROPERTIES - Payer                        -->
+    <!-- ============================================== -->
+
+    <owl:DatatypeProperty rdf:about="#payerId">
+        <rdfs:label>Payer ID</rdfs:label>
+        <rdfs:domain rdf:resource="#Payer"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#payerName">
+        <rdfs:label>Payer Name</rdfs:label>
+        <rdfs:domain rdf:resource="#Payer"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#payerType">
+        <rdfs:label>Payer Type</rdfs:label>
+        <rdfs:domain rdf:resource="#Payer"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment>Values: commercial, medicare, medicaid, self-pay</rdfs:comment>
+    </owl:DatatypeProperty>
+
+    <!-- ============================================== -->
+    <!-- DATA PROPERTIES - Coverage                     -->
+    <!-- ============================================== -->
+
+    <owl:DatatypeProperty rdf:about="#memberId">
+        <rdfs:label>Member ID</rdfs:label>
+        <rdfs:domain rdf:resource="#Coverage"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#groupNumber">
+        <rdfs:label>Group Number</rdfs:label>
+        <rdfs:domain rdf:resource="#Coverage"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#coverageType">
+        <rdfs:label>Coverage Type</rdfs:label>
+        <rdfs:domain rdf:resource="#Coverage"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment>Values: primary, secondary, tertiary</rdfs:comment>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#effectiveDate">
+        <rdfs:label>Effective Date</rdfs:label>
+        <rdfs:domain rdf:resource="#Coverage"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#date"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#terminationDate">
+        <rdfs:label>Termination Date</rdfs:label>
+        <rdfs:domain rdf:resource="#Coverage"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#date"/>
+    </owl:DatatypeProperty>
+
+    <!-- ============================================== -->
+    <!-- DATA PROPERTIES - Claim                        -->
+    <!-- ============================================== -->
+
+    <owl:DatatypeProperty rdf:about="#claimNumber">
+        <rdfs:label>Claim Number</rdfs:label>
+        <rdfs:domain rdf:resource="#Claim"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#claimType">
+        <rdfs:label>Claim Type</rdfs:label>
+        <rdfs:domain rdf:resource="#Claim"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment>Values: professional, institutional, dental, pharmacy</rdfs:comment>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#claimStatus">
+        <rdfs:label>Claim Status</rdfs:label>
+        <rdfs:domain rdf:resource="#Claim"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment>Values: submitted, pending, paid, denied, appealed</rdfs:comment>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#serviceDateStart">
+        <rdfs:label>Service Date Start</rdfs:label>
+        <rdfs:domain rdf:resource="#Claim"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#date"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#serviceDateEnd">
+        <rdfs:label>Service Date End</rdfs:label>
+        <rdfs:domain rdf:resource="#Claim"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#date"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#submissionDate">
+        <rdfs:label>Submission Date</rdfs:label>
+        <rdfs:domain rdf:resource="#Claim"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#date"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#billedAmount">
+        <rdfs:label>Billed Amount</rdfs:label>
+        <rdfs:domain rdf:resource="#Claim"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#allowedAmount">
+        <rdfs:label>Allowed Amount</rdfs:label>
+        <rdfs:domain rdf:resource="#Claim"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#paidAmount">
+        <rdfs:label>Paid Amount</rdfs:label>
+        <rdfs:domain rdf:resource="#Claim"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#patientResponsibility">
+        <rdfs:label>Patient Responsibility</rdfs:label>
+        <rdfs:domain rdf:resource="#Claim"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+    </owl:DatatypeProperty>
+
+    <!-- ============================================== -->
+    <!-- DATA PROPERTIES - Denial                       -->
+    <!-- ============================================== -->
+
+    <owl:DatatypeProperty rdf:about="#denialReasonCode">
+        <rdfs:label>Denial Reason Code</rdfs:label>
+        <rdfs:domain rdf:resource="#Denial"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment>CARC/RARC codes: CO-4, PR-204, etc.</rdfs:comment>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#denialCategory">
+        <rdfs:label>Denial Category</rdfs:label>
+        <rdfs:domain rdf:resource="#Denial"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment>Values: medical_necessity, authorization, coding, eligibility, duplicate</rdfs:comment>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#denialDescription">
+        <rdfs:label>Denial Description</rdfs:label>
+        <rdfs:domain rdf:resource="#Denial"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#deniedAmount">
+        <rdfs:label>Denied Amount</rdfs:label>
+        <rdfs:domain rdf:resource="#Denial"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#denialDate">
+        <rdfs:label>Denial Date</rdfs:label>
+        <rdfs:domain rdf:resource="#Denial"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#date"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#appealDeadline">
+        <rdfs:label>Appeal Deadline</rdfs:label>
+        <rdfs:domain rdf:resource="#Denial"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#date"/>
+    </owl:DatatypeProperty>
+
+    <!-- ============================================== -->
+    <!-- DATA PROPERTIES - Appeal                       -->
+    <!-- ============================================== -->
+
+    <owl:DatatypeProperty rdf:about="#appealNumber">
+        <rdfs:label>Appeal Number</rdfs:label>
+        <rdfs:domain rdf:resource="#Appeal"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#appealLevel">
+        <rdfs:label>Appeal Level</rdfs:label>
+        <rdfs:domain rdf:resource="#Appeal"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment>Values: first_level, second_level, external_review</rdfs:comment>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#appealStatus">
+        <rdfs:label>Appeal Status</rdfs:label>
+        <rdfs:domain rdf:resource="#Appeal"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment>Values: draft, submitted, pending, won, lost</rdfs:comment>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#appealSubmissionDate">
+        <rdfs:label>Appeal Submission Date</rdfs:label>
+        <rdfs:domain rdf:resource="#Appeal"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#date"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#appealResolutionDate">
+        <rdfs:label>Appeal Resolution Date</rdfs:label>
+        <rdfs:domain rdf:resource="#Appeal"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#date"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#appealOutcome">
+        <rdfs:label>Appeal Outcome</rdfs:label>
+        <rdfs:domain rdf:resource="#Appeal"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#recoveredAmount">
+        <rdfs:label>Recovered Amount</rdfs:label>
+        <rdfs:domain rdf:resource="#Appeal"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+    </owl:DatatypeProperty>
+
+    <!-- ============================================== -->
+    <!-- DATA PROPERTIES - Payment                      -->
+    <!-- ============================================== -->
+
+    <owl:DatatypeProperty rdf:about="#paymentAmount">
+        <rdfs:label>Payment Amount</rdfs:label>
+        <rdfs:domain rdf:resource="#Payment"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#decimal"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#paymentDate">
+        <rdfs:label>Payment Date</rdfs:label>
+        <rdfs:domain rdf:resource="#Payment"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#date"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#checkNumber">
+        <rdfs:label>Check/EFT Number</rdfs:label>
+        <rdfs:domain rdf:resource="#Payment"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#adjustmentCodes">
+        <rdfs:label>Adjustment Codes</rdfs:label>
+        <rdfs:domain rdf:resource="#Payment"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+
+    <!-- ============================================== -->
+    <!-- DATA PROPERTIES - Authorization                -->
+    <!-- ============================================== -->
+
+    <owl:DatatypeProperty rdf:about="#authorizationNumber">
+        <rdfs:label>Authorization Number</rdfs:label>
+        <rdfs:domain rdf:resource="#Authorization"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#authorizationStatus">
+        <rdfs:label>Authorization Status</rdfs:label>
+        <rdfs:domain rdf:resource="#Authorization"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment>Values: requested, approved, denied, expired</rdfs:comment>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#authorizedUnits">
+        <rdfs:label>Authorized Units</rdfs:label>
+        <rdfs:domain rdf:resource="#Authorization"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="#authorizationExpiry">
+        <rdfs:label>Authorization Expiry</rdfs:label>
+        <rdfs:domain rdf:resource="#Authorization"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#date"/>
+    </owl:DatatypeProperty>
+
+    <!-- ============================================== -->
+    <!-- OBJECT PROPERTIES - Financial Relationships    -->
+    <!-- ============================================== -->
+
+    <owl:ObjectProperty rdf:about="#hasCoverage">
+        <rdfs:label>Has Coverage</rdfs:label>
+        <rdfs:domain rdf:resource="http://aegis.health/ontology/core#Patient"/>
+        <rdfs:range rdf:resource="#Coverage"/>
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="#providedBy">
+        <rdfs:label>Provided By (Payer)</rdfs:label>
+        <rdfs:domain rdf:resource="#Coverage"/>
+        <rdfs:range rdf:resource="#Payer"/>
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="#billedFor">
+        <rdfs:label>Billed For</rdfs:label>
+        <rdfs:domain rdf:resource="http://aegis.health/ontology/clinical#Encounter"/>
+        <rdfs:range rdf:resource="#Claim"/>
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="#submittedTo">
+        <rdfs:label>Submitted To</rdfs:label>
+        <rdfs:domain rdf:resource="#Claim"/>
+        <rdfs:range rdf:resource="#Payer"/>
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="#hasDenial">
+        <rdfs:label>Has Denial</rdfs:label>
+        <rdfs:domain rdf:resource="#Claim"/>
+        <rdfs:range rdf:resource="#Denial"/>
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="#hasPayment">
+        <rdfs:label>Has Payment</rdfs:label>
+        <rdfs:domain rdf:resource="#Claim"/>
+        <rdfs:range rdf:resource="#Payment"/>
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="#appealedWith">
+        <rdfs:label>Appealed With</rdfs:label>
+        <rdfs:domain rdf:resource="#Denial"/>
+        <rdfs:range rdf:resource="#Appeal"/>
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="#hasClaimLine">
+        <rdfs:label>Has Claim Line</rdfs:label>
+        <rdfs:domain rdf:resource="#Claim"/>
+        <rdfs:range rdf:resource="#ClaimLine"/>
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="#requiresAuthorization">
+        <rdfs:label>Requires Authorization</rdfs:label>
+        <rdfs:domain rdf:resource="http://aegis.health/ontology/clinical#Procedure"/>
+        <rdfs:range rdf:resource="#Authorization"/>
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="#supportedBy">
+        <rdfs:label>Supported By (Evidence)</rdfs:label>
+        <rdfs:comment>Appeal supported by clinical evidence</rdfs:comment>
+        <rdfs:domain rdf:resource="#Appeal"/>
+        <rdfs:range rdf:resource="http://aegis.health/ontology/clinical#Observation"/>
+    </owl:ObjectProperty>
+
+</rdf:RDF>

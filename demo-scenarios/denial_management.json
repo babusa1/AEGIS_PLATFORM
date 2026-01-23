@@ -1,0 +1,123 @@
+{
+  "scenario": "denial_management",
+  "version": "1.0",
+  "description": "Demo scenario for denial management and appeal workflow",
+  "config": {
+    "num_patients": 500,
+    "num_providers": 50,
+    "num_organizations": 10,
+    "encounters_per_patient": [2, 8],
+    "denial_rate": 0.15,
+    "high_value_threshold": 10000,
+    "seed": 42
+  },
+  "payers": [
+    {
+      "id": "payer-bcbs",
+      "name": "Blue Cross Blue Shield",
+      "type": "commercial",
+      "denial_rate": 0.18,
+      "avg_days_to_pay": 30
+    },
+    {
+      "id": "payer-aetna",
+      "name": "Aetna",
+      "type": "commercial",
+      "denial_rate": 0.14,
+      "avg_days_to_pay": 25
+    },
+    {
+      "id": "payer-united",
+      "name": "United Healthcare",
+      "type": "commercial",
+      "denial_rate": 0.16,
+      "avg_days_to_pay": 28
+    },
+    {
+      "id": "payer-medicare",
+      "name": "Medicare",
+      "type": "government",
+      "denial_rate": 0.10,
+      "avg_days_to_pay": 14
+    },
+    {
+      "id": "payer-medicaid",
+      "name": "Medicaid",
+      "type": "government",
+      "denial_rate": 0.12,
+      "avg_days_to_pay": 21
+    }
+  ],
+  "denial_categories": [
+    {
+      "code": "PR-204",
+      "category": "medical_necessity",
+      "description": "Service not medically necessary",
+      "weight": 0.35,
+      "appeal_success_rate": 0.65
+    },
+    {
+      "code": "PR-15",
+      "category": "authorization",
+      "description": "Authorization required but not obtained",
+      "weight": 0.25,
+      "appeal_success_rate": 0.45
+    },
+    {
+      "code": "CO-4",
+      "category": "coding",
+      "description": "Procedure code inconsistent with modifier",
+      "weight": 0.20,
+      "appeal_success_rate": 0.75
+    },
+    {
+      "code": "CO-16",
+      "category": "documentation",
+      "description": "Claim lacks information needed",
+      "weight": 0.15,
+      "appeal_success_rate": 0.80
+    },
+    {
+      "code": "PR-27",
+      "category": "timely_filing",
+      "description": "Expenses incurred after coverage terminated",
+      "weight": 0.05,
+      "appeal_success_rate": 0.20
+    }
+  ],
+  "demo_highlights": [
+    {
+      "type": "high_value_denial",
+      "claim_number": "CLM-2024-8847",
+      "patient_name": "John Smith",
+      "mrn": "MRN-78234",
+      "denied_amount": 45230,
+      "denial_reason": "PR-204",
+      "days_to_deadline": 3,
+      "notes": "Cardiology procedure - perfect for appeal demo"
+    },
+    {
+      "type": "pattern",
+      "description": "Cardiology denials increased 23% this month",
+      "category": "medical_necessity",
+      "department": "Cardiology",
+      "impact": 125000
+    },
+    {
+      "type": "payer_issue",
+      "payer": "Blue Cross Blue Shield",
+      "description": "New prior auth requirements for echo procedures",
+      "affected_claims": 45,
+      "total_impact": 340000
+    }
+  ],
+  "expected_metrics": {
+    "total_claims": 1200,
+    "total_billed": 8500000,
+    "total_denied": 2400000,
+    "denial_count": 180,
+    "avg_denial_amount": 13333,
+    "urgent_appeals": 12,
+    "ytd_appeal_success_rate": 0.68
+  }
+}

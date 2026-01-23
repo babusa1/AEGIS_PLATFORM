@@ -1,0 +1,55 @@
+# AEGIS - Healthcare Agentic Operating System
+# Requirements for development
+
+# Core Framework
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+python-multipart>=0.0.6
+
+# Graph Database (Gremlin for Neptune/JanusGraph)
+gremlinpython>=3.7.0
+
+# Vector Database & Search
+opensearch-py>=2.4.0
+
+# LLM & Agents
+langchain>=0.1.0
+langchain-core>=0.1.0
+langgraph>=0.0.20
+langchain-aws>=0.1.0
+
+# AWS SDK (for Bedrock)
+boto3>=1.34.0
+botocore>=1.34.0
+
+# Healthcare Data Standards
+fhir.resources>=7.0.0
+
+# Data Processing
+pandas>=2.1.0
+numpy>=1.26.0
+
+# Async & HTTP
+httpx>=0.26.0
+aiohttp>=3.9.0
+
+# Authentication & Security
+python-jose[cryptography]>=3.3.0
+cryptography>=42.0.0
+
+# Utilities
+python-dotenv>=1.0.0
+structlog>=24.1.0
+tenacity>=8.2.0
+orjson>=3.9.0
+pyyaml>=6.0.0
+
+# Development
+pytest>=7.4.0
+pytest-asyncio>=0.23.0
+pytest-cov>=4.1.0
+black>=24.1.0
+ruff>=0.1.0
+mypy>=1.8.0

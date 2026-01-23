@@ -1,0 +1,151 @@
+{
+  "scenario": "patient_360",
+  "version": "1.0",
+  "description": "Demo scenario showcasing comprehensive patient views",
+  "featured_patients": [
+    {
+      "id": "patient-001",
+      "mrn": "MRN-78234",
+      "demographics": {
+        "first_name": "John",
+        "last_name": "Smith",
+        "dob": "1965-03-15",
+        "gender": "male",
+        "address": "123 Main St, Chicago, IL 60601",
+        "phone": "(312) 555-0123"
+      },
+      "payer": {
+        "name": "Blue Cross Blue Shield",
+        "member_id": "BCBS-123456",
+        "group": "ACME Corp"
+      },
+      "conditions": [
+        {
+          "code": "E11.9",
+          "description": "Type 2 Diabetes Mellitus",
+          "onset_date": "2018-05-10",
+          "status": "active"
+        },
+        {
+          "code": "I10",
+          "description": "Essential Hypertension",
+          "onset_date": "2015-02-20",
+          "status": "active"
+        },
+        {
+          "code": "N18.3",
+          "description": "Chronic Kidney Disease Stage 3",
+          "onset_date": "2022-08-15",
+          "status": "active"
+        }
+      ],
+      "recent_encounters": [
+        {
+          "date": "2024-01-15",
+          "type": "office_visit",
+          "provider": "Dr. Sarah Martinez",
+          "specialty": "Internal Medicine",
+          "reason": "Diabetes follow-up",
+          "notes": "HbA1c elevated at 9.2%, adjusted metformin dosage"
+        },
+        {
+          "date": "2024-01-05",
+          "type": "lab",
+          "provider": "Quest Diagnostics",
+          "reason": "Routine labs",
+          "results": {
+            "HbA1c": 9.2,
+            "creatinine": 1.8,
+            "eGFR": 45
+          }
+        },
+        {
+          "date": "2023-12-20",
+          "type": "specialist",
+          "provider": "Dr. Michael Chen",
+          "specialty": "Nephrology",
+          "reason": "CKD management",
+          "notes": "Stage 3 CKD stable, continue current management"
+        }
+      ],
+      "medications": [
+        {"name": "Metformin", "dose": "1000mg", "frequency": "twice daily"},
+        {"name": "Lisinopril", "dose": "20mg", "frequency": "once daily"},
+        {"name": "Atorvastatin", "dose": "40mg", "frequency": "at bedtime"}
+      ],
+      "risk_scores": {
+        "readmission_risk": 0.72,
+        "fall_risk": "medium",
+        "hcc_score": 1.45,
+        "mortality_risk": 0.15
+      },
+      "care_gaps": [
+        "Nephrology follow-up overdue (last: 12/20/2023)",
+        "Eye exam not completed in 14 months",
+        "Medication adherence concern (refill gap detected)"
+      ],
+      "financial_summary": {
+        "ytd_claims": 45230,
+        "ytd_paid": 38450,
+        "outstanding_balance": 6780,
+        "denied_claims": 2
+      },
+      "demo_notes": "Primary demo patient - complex chronic conditions with active denial"
+    },
+    {
+      "id": "patient-002",
+      "mrn": "MRN-78236",
+      "demographics": {
+        "first_name": "Robert",
+        "last_name": "Johnson",
+        "dob": "1952-11-08",
+        "gender": "male"
+      },
+      "risk_scores": {
+        "readmission_risk": 0.85,
+        "fall_risk": "high",
+        "hcc_score": 2.1
+      },
+      "demo_notes": "High-risk Medicare patient - good for risk discussion"
+    },
+    {
+      "id": "patient-003",
+      "mrn": "MRN-78235",
+      "demographics": {
+        "first_name": "Maria",
+        "last_name": "Garcia",
+        "dob": "1978-07-22",
+        "gender": "female"
+      },
+      "risk_scores": {
+        "readmission_risk": 0.25,
+        "fall_risk": "low",
+        "hcc_score": 0.8
+      },
+      "demo_notes": "Low-risk patient for comparison"
+    }
+  ],
+  "demo_flow": [
+    {
+      "step": 1,
+      "action": "Search for patient",
+      "input": "MRN-78234",
+      "expected": "John Smith appears in results"
+    },
+    {
+      "step": 2,
+      "action": "View Patient 360",
+      "highlight": ["Demographics", "Active conditions", "Risk scores"]
+    },
+    {
+      "step": 3,
+      "action": "Generate AI Summary",
+      "expected": "Comprehensive summary with care gaps and recommendations"
+    },
+    {
+      "step": 4,
+      "action": "View claims",
+      "highlight": ["Outstanding denial", "Recent payments"]
+    }
+  ]
+}
