@@ -1,0 +1,15 @@
+[project]
+name = "aegis-mpi"
+version = "0.1.0"
+description = "AEGIS Master Patient Index - Entity resolution and matching"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.0.0",
+    "structlog>=24.0.0",
+    "rapidfuzz>=3.0.0",
+    "jellyfish>=1.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

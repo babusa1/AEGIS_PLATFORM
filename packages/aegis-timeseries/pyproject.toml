@@ -1,0 +1,15 @@
+[project]
+name = "aegis-timeseries"
+version = "0.1.0"
+description = "AEGIS Time-Series Database - Vitals, labs, wearable signals"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.0.0",
+    "structlog>=24.0.0",
+    "asyncpg>=0.29.0",
+    "pandas>=2.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

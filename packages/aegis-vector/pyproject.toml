@@ -1,0 +1,14 @@
+[project]
+name = "aegis-vector"
+version = "0.1.0"
+description = "AEGIS Vector Database - Semantic memory, RAG"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.0.0",
+    "structlog>=24.0.0",
+    "numpy>=1.26.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

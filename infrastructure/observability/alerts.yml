@@ -1,0 +1,18 @@
+groups:
+  - name: aegis
+    rules:
+      - alert: APIDown
+        expr: up{job="aegis-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+      - alert: HighLatency
+        expr: http_request_duration_seconds > 1
+        for: 5m
+        labels:
+          severity: warning
+      - alert: HighErrorRate
+        expr: rate(http_errors_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
