@@ -1,14 +1,16 @@
 """
-Genomics Connector
+Genomics Connectors
 
-Parses genetic/genomic data:
+Parses genomic data formats:
 - VCF (Variant Call Format)
-- Gene panels
-- Pharmacogenomics
+- GA4GH Variants API
 """
 
-from aegis_connectors.genomics.parser import VCFParser
-from aegis_connectors.genomics.transformer import GenomicsTransformer
 from aegis_connectors.genomics.connector import GenomicsConnector
+from aegis_connectors.genomics.ga4gh import GA4GHConnector, GA4GHClient
 
-__all__ = ["VCFParser", "GenomicsTransformer", "GenomicsConnector"]
+__all__ = [
+    "GenomicsConnector",
+    "GA4GHConnector",
+    "GA4GHClient",
+]

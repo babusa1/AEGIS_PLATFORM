@@ -1,13 +1,20 @@
 """
-Document Connector
+Document Connectors
 
 Parses clinical documents:
-- CDA (Clinical Document Architecture)
-- C-CDA (Consolidated CDA)
-- PDF with extracted text
+- CDA/CCDA (structured XML)
+- PDF (text extraction)
+- NLP (entity extraction from notes)
 """
 
-from aegis_connectors.documents.parser import DocumentParser
 from aegis_connectors.documents.connector import DocumentConnector
+from aegis_connectors.documents.pdf import PDFConnector, PDFExtractor
+from aegis_connectors.documents.nlp import NLPConnector, ClinicalNLPExtractor
 
-__all__ = ["DocumentParser", "DocumentConnector"]
+__all__ = [
+    "DocumentConnector",
+    "PDFConnector",
+    "PDFExtractor",
+    "NLPConnector",
+    "ClinicalNLPExtractor",
+]
