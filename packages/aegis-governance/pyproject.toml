@@ -1,0 +1,13 @@
+[project]
+name = "aegis-governance"
+version = "0.1.0"
+description = "AEGIS Governance - SOC 2 and HITRUST Compliance"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.0.0",
+    "structlog>=24.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
