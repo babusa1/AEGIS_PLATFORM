@@ -26,6 +26,7 @@ dependencies = [
     "uvicorn[standard]>=0.27.0",
     "pydantic>=2.5.0",
     "pydantic-settings>=2.1.0",
+    "python-multipart>=0.0.6",  # Required for file uploads
     
     # Graph Database
     "gremlinpython>=3.7.0",
