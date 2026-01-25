@@ -31,8 +31,15 @@ dependencies = [
     "gremlinpython>=3.7.0",
     "aiogremlin>=3.3.0",
     
+    # PostgreSQL / TimescaleDB
+    "asyncpg>=0.29.0",
+    "psycopg2-binary>=2.9.0",
+    
     # Vector Database & Search
     "opensearch-py>=2.4.0",
+    
+    # Caching
+    "redis>=5.0.0",
     
     # LLM & Agents
     "langchain>=0.1.0",

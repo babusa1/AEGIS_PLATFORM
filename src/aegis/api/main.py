@@ -41,6 +41,8 @@ logger = structlog.get_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan manager for startup/shutdown events."""
+    from aegis.db import init_db_clients, close_db_clients
+    
     settings = get_settings()
     
     # Startup
@@ -51,16 +53,26 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         llm_provider=settings.llm.llm_provider,
     )
     
-    # Initialize connections (will be implemented)
-    # await initialize_graph_db()
-    # await initialize_opensearch()
-    # await initialize_kafka()
+    # Initialize all database connections
+    try:
+        db_clients = await init_db_clients(settings)
+        app.state.db = db_clients
+        logger.info(
+            "Database connections ready",
+            postgres=db_clients.postgres is not None,
+            graph=db_clients.graph is not None,
+            opensearch=db_clients.opensearch is not None,
+            redis=db_clients.redis is not None,
+        )
+    except Exception as e:
+        logger.error("Failed to initialize databases", error=str(e))
+        # Continue anyway - mock clients will be used
     
     yield
     
     # Shutdown
     logger.info("Shutting down AEGIS API")
-    # await close_connections()
+    await close_db_clients()
 
 
 # Create FastAPI application

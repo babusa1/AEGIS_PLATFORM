@@ -5,6 +5,29 @@ version: '3.8'
 
 services:
   # ==========================================================================
+  # PostgreSQL with TimescaleDB (Operational + Time-Series Data)
+  # ==========================================================================
+  postgres:
+    image: timescale/timescaledb:latest-pg15
+    container_name: aegis-postgres
+    environment:
+      POSTGRES_USER: aegis
+      POSTGRES_PASSWORD: aegis_dev_password
+      POSTGRES_DB: aegis
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aegis -d aegis"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aegis-network
+
+  # ==========================================================================
   # JanusGraph (Neptune-compatible Graph Database)
   # ==========================================================================
   janusgraph:
@@ -176,6 +199,7 @@ networks:
 # Volumes
 # ==========================================================================
 volumes:
+  postgres_data:
   janusgraph_data:
   opensearch_data:
   zookeeper_data:

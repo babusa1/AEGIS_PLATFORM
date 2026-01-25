@@ -177,6 +177,8 @@ class Settings:
     def __init__(self):
         self.app = AegisSettings()
         self.graph_db = GraphDBSettings()
+        self.postgres = PostgresSettings()
+        self.redis = RedisSettings()
         self.opensearch = OpenSearchSettings()
         self.kafka = KafkaSettings()
         self.llm = LLMSettings()
