@@ -29,7 +29,6 @@ dependencies = [
     
     # Graph Database
     "gremlinpython>=3.7.0",
-    "aiogremlin>=3.3.0",
     
     # PostgreSQL / TimescaleDB
     "asyncpg>=0.29.0",
