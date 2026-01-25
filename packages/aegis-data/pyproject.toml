@@ -1,0 +1,16 @@
+[project]
+name = "aegis-data"
+version = "0.1.0"
+description = "AEGIS Unified Data Layer - Repository pattern for Graph, Postgres, TimeSeries"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.0.0",
+    "structlog>=24.0.0",
+    "asyncpg>=0.29.0",
+    "sqlalchemy>=2.0.0",
+    "alembic>=1.13.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
