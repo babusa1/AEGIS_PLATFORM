@@ -81,6 +81,53 @@ class OpenSearchSettings(BaseSettings):
         return f"{protocol}://{self.host}:{self.port}"
 
 
+class PostgresSettings(BaseSettings):
+    """PostgreSQL/TimescaleDB settings."""
+    
+    model_config = SettingsConfigDict(
+        env_prefix="POSTGRES_",
+        env_file=".env",
+        extra="ignore",
+    )
+    
+    host: str = "localhost"
+    port: int = 5432
+    user: str = "aegis"
+    password: SecretStr = Field(default=SecretStr("aegis_dev_password"))
+    database: str = "aegis"
+    min_pool_size: int = 2
+    max_pool_size: int = 10
+    
+    @property
+    def connection_url(self) -> str:
+        """Get the PostgreSQL connection URL."""
+        pwd = self.password.get_secret_value()
+        return f"postgresql://{self.user}:{pwd}@{self.host}:{self.port}/{self.database}"
+
+
+class RedisSettings(BaseSettings):
+    """Redis cache settings."""
+    
+    model_config = SettingsConfigDict(
+        env_prefix="REDIS_",
+        env_file=".env",
+        extra="ignore",
+    )
+    
+    host: str = "localhost"
+    port: int = 6379
+    db: int = 0
+    password: SecretStr | None = None
+    
+    @property
+    def connection_url(self) -> str:
+        """Get the Redis connection URL."""
+        if self.password:
+            pwd = self.password.get_secret_value()
+            return f"redis://:{pwd}@{self.host}:{self.port}/{self.db}"
+        return f"redis://{self.host}:{self.port}/{self.db}"
+
+
 class KafkaSettings(BaseSettings):
     """Kafka event streaming settings."""
     
