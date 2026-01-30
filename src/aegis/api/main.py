@@ -112,18 +112,45 @@ async def root():
 
 
 @app.get("/health", tags=["Health"])
-async def health_check():
+async def health_check(request: Request):
     """Health check endpoint for load balancers and monitoring."""
     settings = get_settings()
+    
+    # Check database connections
+    services = {"api": "up"}
+    
+    # Check graph database
+    try:
+        from aegis.graph.client import get_graph_client
+        graph = await get_graph_client()
+        if graph.is_mock:
+            services["graph_db"] = "mock"
+        elif await graph.health_check():
+            services["graph_db"] = "up"
+        else:
+            services["graph_db"] = "down"
+    except Exception:
+        services["graph_db"] = "down"
+    
+    # Check if databases from app.state are available
+    if hasattr(request.app.state, "db") and request.app.state.db:
+        db = request.app.state.db
+        services["postgres"] = "up" if db.postgres else "down"
+        services["redis"] = "up" if db.redis else "down"
+        services["opensearch"] = "up" if db.opensearch else "down"
+    else:
+        services["postgres"] = "not_initialized"
+        services["redis"] = "not_initialized"
+        services["opensearch"] = "not_initialized"
+    
+    # Determine overall status
+    all_up = all(s in ("up", "mock") for s in services.values())
+    
     return {
-        "status": "healthy",
+        "status": "healthy" if all_up else "degraded",
         "env": settings.app.env,
-        "services": {
-            "api": "up",
-            "graph_db": "pending",  # Will be implemented
-            "opensearch": "pending",
-            "kafka": "pending",
-        },
+        "services": services,
+        "mock_mode": services.get("graph_db") == "mock",
     }
 
 
