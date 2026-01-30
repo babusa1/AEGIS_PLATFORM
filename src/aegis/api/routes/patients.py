@@ -2,18 +2,32 @@
 Patient Routes
 
 Endpoints for patient data and 360-degree views.
+Uses PostgreSQL when available, falls back to mock data.
 """
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from pydantic import BaseModel, Field
 
 from aegis.api.auth import TenantContext, get_tenant_context
-from aegis.graph.client import get_graph_client
-from aegis.graph.queries import GraphQueries
 
 router = APIRouter(prefix="/patients", tags=["Patients"])
+
+
+async def get_patient_repo(request: Request):
+    """
+    Get patient repository - PostgreSQL if available, mock otherwise.
+    """
+    # Check if PostgreSQL pool is available in app state
+    if hasattr(request.app.state, "db") and request.app.state.db:
+        pool = getattr(request.app.state.db, "postgres", None)
+        if pool:
+            from aegis.db.postgres_repo import PostgresPatientRepository
+            return PostgresPatientRepository(pool)
+    
+    # Fall back to mock via graph client
+    return None
 
 
 # =============================================================================
@@ -95,6 +109,7 @@ class Patient360Response(BaseModel):
 
 @router.get("", response_model=PatientListResponse)
 async def list_patients(
+    request: Request,
     page: int = Query(default=1, ge=1, description="Page number"),
     page_size: int = Query(default=20, ge=1, le=100, description="Items per page"),
     search: str | None = Query(default=None, description="Search by name or MRN"),
@@ -104,34 +119,37 @@ async def list_patients(
     List patients for the current tenant.
     
     Supports pagination and search.
+    Uses PostgreSQL when available, falls back to mock data.
     """
     try:
-        client = await get_graph_client()
-        
-        # Build query
         offset = (page - 1) * page_size
+        repo = await get_patient_repo(request)
         
-        if search:
-            query = """
-            g.V()
-                .hasLabel('Patient')
-                .has('tenant_id', tenant_id)
-                .or(
-                    has('mrn', containing(search)),
-                    has('given_name', containing(search)),
-                    has('family_name', containing(search))
+        if repo:
+            # Use PostgreSQL
+            patient_rows, total = await repo.list_patients(
+                tenant_id=tenant.tenant_id,
+                limit=page_size,
+                offset=offset,
+                search=search
+            )
+            
+            patients = [
+                PatientSummary(
+                    id=str(row.get("id", "")),
+                    mrn=row.get("mrn", ""),
+                    given_name=row.get("given_name", ""),
+                    family_name=row.get("family_name", ""),
+                    birth_date=str(row.get("birth_date")) if row.get("birth_date") else None,
+                    gender=row.get("gender"),
                 )
-                .order().by('family_name', asc)
-                .range(offset, offset + limit)
-                .valueMap(true)
-            """
-            bindings = {
-                "tenant_id": tenant.tenant_id,
-                "search": search,
-                "offset": offset,
-                "limit": page_size,
-            }
+                for row in patient_rows
+            ]
         else:
+            # Fall back to mock via graph client
+            from aegis.graph.client import get_graph_client
+            client = await get_graph_client()
+            
             query = """
             g.V()
                 .hasLabel('Patient')
@@ -145,30 +163,28 @@ async def list_patients(
                 "offset": offset,
                 "limit": page_size,
             }
-        
-        results = await client.execute(query, bindings)
-        
-        # Count total
-        count_query = """
-        g.V()
-            .hasLabel('Patient')
-            .has('tenant_id', tenant_id)
-            .count()
-        """
-        count_result = await client.execute(count_query, {"tenant_id": tenant.tenant_id})
-        total = count_result[0] if count_result else 0
-        
-        # Transform results
-        patients = []
-        for row in results:
-            patients.append(PatientSummary(
-                id=str(row.get("id", [""])[0] if isinstance(row.get("id"), list) else row.get("id", "")),
-                mrn=row.get("mrn", [""])[0] if isinstance(row.get("mrn"), list) else row.get("mrn", ""),
-                given_name=row.get("given_name", [""])[0] if isinstance(row.get("given_name"), list) else row.get("given_name", ""),
-                family_name=row.get("family_name", [""])[0] if isinstance(row.get("family_name"), list) else row.get("family_name", ""),
-                birth_date=row.get("birth_date", [None])[0] if isinstance(row.get("birth_date"), list) else row.get("birth_date"),
-                gender=row.get("gender", [None])[0] if isinstance(row.get("gender"), list) else row.get("gender"),
-            ))
+            
+            results = await client.execute(query, bindings)
+            
+            count_query = """
+            g.V()
+                .hasLabel('Patient')
+                .has('tenant_id', tenant_id)
+                .count()
+            """
+            count_result = await client.execute(count_query, {"tenant_id": tenant.tenant_id})
+            total = count_result[0] if count_result else 0
+            
+            patients = []
+            for row in results:
+                patients.append(PatientSummary(
+                    id=str(row.get("id", [""])[0] if isinstance(row.get("id"), list) else row.get("id", "")),
+                    mrn=row.get("mrn", [""])[0] if isinstance(row.get("mrn"), list) else row.get("mrn", ""),
+                    given_name=row.get("given_name", [""])[0] if isinstance(row.get("given_name"), list) else row.get("given_name", ""),
+                    family_name=row.get("family_name", [""])[0] if isinstance(row.get("family_name"), list) else row.get("family_name", ""),
+                    birth_date=row.get("birth_date", [None])[0] if isinstance(row.get("birth_date"), list) else row.get("birth_date"),
+                    gender=row.get("gender", [None])[0] if isinstance(row.get("gender"), list) else row.get("gender"),
+                ))
         
         return PatientListResponse(
             patients=patients,
@@ -282,6 +298,7 @@ def _calculate_patient_status(conditions: list, risk_scores: dict) -> dict:
 
 @router.get("/{patient_id}", response_model=Patient360Response)
 async def get_patient_360(
+    request: Request,
     patient_id: str,
     tenant: TenantContext = Depends(get_tenant_context),
 ):
@@ -298,109 +315,185 @@ async def get_patient_360(
     - Risk scores (calculated)
     - Patient status indicator
     - Financial summary
+    
+    Uses PostgreSQL when available, falls back to mock data.
     """
     try:
-        client = await get_graph_client()
-        queries = GraphQueries(client)
+        repo = await get_patient_repo(request)
         
-        # Get patient 360 data
-        data = await queries.get_patient_360_view(patient_id)
-        
-        if not data or not data.get("patient"):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Patient {patient_id} not found",
+        if repo:
+            # Use PostgreSQL - get complete 360 view
+            data = await repo.get_patient_360(patient_id, tenant.tenant_id)
+            
+            if not data or not data.get("patient"):
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Patient {patient_id} not found",
+                )
+            
+            # Transform conditions
+            conditions = [
+                ConditionSummary(
+                    id=str(c.get("id", "")),
+                    code=c.get("code", ""),
+                    display=c.get("display", ""),
+                    status=c.get("status", "active"),
+                )
+                for c in data.get("conditions", [])
+            ]
+            
+            # Transform encounters
+            encounters = [
+                EncounterSummary(
+                    id=str(e.get("id", "")),
+                    type=e.get("encounter_type", ""),
+                    status=e.get("status", ""),
+                    admit_date=str(e.get("admit_date", "")) if e.get("admit_date") else "",
+                    discharge_date=str(e.get("discharge_date", "")) if e.get("discharge_date") else None,
+                    diagnoses=[],
+                    procedures=[],
+                )
+                for e in data.get("encounters", [])
+            ]
+            
+            # Transform claims
+            claims = [
+                ClaimSummary(
+                    id=str(c.get("id", "")),
+                    claim_number=c.get("claim_number", ""),
+                    type=c.get("claim_type", ""),
+                    status=c.get("status", ""),
+                    billed_amount=float(c.get("billed_amount", 0) or 0),
+                    paid_amount=float(c.get("paid_amount", 0)) if c.get("paid_amount") else None,
+                    denial_reason=c.get("denial_reason"),
+                )
+                for c in data.get("claims", [])
+            ]
+            
+            # Transform vitals
+            vitals = [
+                VitalSign(
+                    type=v.get("type", ""),
+                    value=float(v.get("value", 0)),
+                    unit=v.get("unit", ""),
+                    timestamp=v.get("timestamp"),
+                )
+                for v in data.get("vitals", [])
+            ]
+            
+            return Patient360Response(
+                patient=data.get("patient", {}),
+                conditions=conditions,
+                encounters=encounters,
+                claims=claims,
+                medications=data.get("medications", []),
+                vitals=vitals,
+                risk_scores=data.get("risk_scores", {}),
+                patient_status=data.get("patient_status", {}),
+                financial_summary=data.get("financial_summary", {}),
             )
         
-        # Get conditions
-        conditions_query = f"g.V('{patient_id}').out('HAS_CONDITION').valueMap(true)"
-        conditions_data = await client.execute(conditions_query, {"patient_id": patient_id})
-        
-        conditions = []
-        for cond in conditions_data:
-            conditions.append(ConditionSummary(
-                id=_extract_value(cond, "id"),
-                code=_extract_value(cond, "code"),
-                display=_extract_value(cond, "display"),
-                status=_extract_value(cond, "status", "active"),
-            ))
-        
-        # Transform encounters
-        encounters = []
-        for enc in data.get("encounters", []):
-            enc_data = enc.get("encounter", {})
-            encounters.append(EncounterSummary(
-                id=str(_extract_value(enc_data, "id")),
-                type=_extract_value(enc_data, "type"),
-                status=_extract_value(enc_data, "status"),
-                admit_date=_extract_value(enc_data, "admit_date"),
-                discharge_date=_extract_value(enc_data, "discharge_date") or None,
-                diagnoses=enc.get("diagnoses", []),
-                procedures=enc.get("procedures", []),
-            ))
-        
-        # Transform claims
-        claims = []
-        for clm in data.get("claims", []):
-            claim_data = clm.get("claim", {})
-            denials = clm.get("denials", [])
+        else:
+            # Fall back to mock via graph client
+            from aegis.graph.client import get_graph_client
+            from aegis.graph.queries import GraphQueries
             
-            billed = _extract_value(claim_data, "billed_amount", 0)
-            paid = _extract_value(claim_data, "paid_amount", 0)
+            client = await get_graph_client()
+            queries = GraphQueries(client)
             
-            claims.append(ClaimSummary(
-                id=str(_extract_value(claim_data, "id")),
-                claim_number=_extract_value(claim_data, "claim_number"),
-                type=_extract_value(claim_data, "type"),
-                status=_extract_value(claim_data, "status"),
-                billed_amount=float(billed) if billed else 0.0,
-                paid_amount=float(paid) if paid else None,
-                denial_reason=_extract_value(denials[0], "reason_code") if denials else None,
-            ))
-        
-        # Sample vitals (would come from TimescaleDB in production)
-        vitals = [
-            VitalSign(type="Blood Pressure", value=128, unit="mmHg (systolic)", timestamp="2024-01-15T10:30:00Z"),
-            VitalSign(type="Heart Rate", value=72, unit="bpm", timestamp="2024-01-15T10:30:00Z"),
-            VitalSign(type="Temperature", value=98.6, unit="°F", timestamp="2024-01-15T10:30:00Z"),
-            VitalSign(type="SpO2", value=98, unit="%", timestamp="2024-01-15T10:30:00Z"),
-        ]
-        
-        # Calculate real risk scores
-        medications = data.get("medications", [])
-        risk_scores = _calculate_risk_scores(
-            [c.model_dump() for c in conditions],
-            medications,
-            data.get("patient", {})
-        )
-        
-        # Calculate patient status
-        patient_status = _calculate_patient_status(
-            [c.model_dump() for c in conditions],
-            risk_scores
-        )
-        
-        # Calculate financial summary
-        total_billed = sum(c.billed_amount for c in claims)
-        total_paid = sum(c.paid_amount or 0 for c in claims)
-        total_denied = sum(c.billed_amount for c in claims if c.status == "denied")
-        
-        return Patient360Response(
-            patient=data.get("patient", {}),
-            conditions=conditions,
-            encounters=encounters,
-            claims=claims,
-            medications=medications,
-            vitals=vitals,
-            risk_scores=risk_scores,
-            patient_status=patient_status,
-            financial_summary={
-                "total_billed": total_billed,
-                "total_paid": total_paid,
-                "total_denied": total_denied,
-                "collection_rate": round(total_paid / total_billed, 2) if total_billed > 0 else 0,
-            },
-        )
+            data = await queries.get_patient_360_view(patient_id)
+            
+            if not data or not data.get("patient"):
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Patient {patient_id} not found",
+                )
+            
+            # Get conditions
+            conditions_query = f"g.V('{patient_id}').out('HAS_CONDITION').valueMap(true)"
+            conditions_data = await client.execute(conditions_query, {"patient_id": patient_id})
+            
+            conditions = [
+                ConditionSummary(
+                    id=_extract_value(cond, "id"),
+                    code=_extract_value(cond, "code"),
+                    display=_extract_value(cond, "display"),
+                    status=_extract_value(cond, "status", "active"),
+                )
+                for cond in conditions_data
+            ]
+            
+            # Transform encounters
+            encounters = []
+            for enc in data.get("encounters", []):
+                enc_data = enc.get("encounter", {})
+                encounters.append(EncounterSummary(
+                    id=str(_extract_value(enc_data, "id")),
+                    type=_extract_value(enc_data, "type"),
+                    status=_extract_value(enc_data, "status"),
+                    admit_date=_extract_value(enc_data, "admit_date"),
+                    discharge_date=_extract_value(enc_data, "discharge_date") or None,
+                    diagnoses=enc.get("diagnoses", []),
+                    procedures=enc.get("procedures", []),
+                ))
+            
+            # Transform claims
+            claims = []
+            for clm in data.get("claims", []):
+                claim_data = clm.get("claim", {})
+                denials = clm.get("denials", [])
+                billed = _extract_value(claim_data, "billed_amount", 0)
+                paid = _extract_value(claim_data, "paid_amount", 0)
+                
+                claims.append(ClaimSummary(
+                    id=str(_extract_value(claim_data, "id")),
+                    claim_number=_extract_value(claim_data, "claim_number"),
+                    type=_extract_value(claim_data, "type"),
+                    status=_extract_value(claim_data, "status"),
+                    billed_amount=float(billed) if billed else 0.0,
+                    paid_amount=float(paid) if paid else None,
+                    denial_reason=_extract_value(denials[0], "reason_code") if denials else None,
+                ))
+            
+            # Sample vitals for mock mode
+            vitals = [
+                VitalSign(type="bp_systolic", value=128, unit="mmHg", timestamp="2024-01-15T10:30:00Z"),
+                VitalSign(type="heart_rate", value=72, unit="bpm", timestamp="2024-01-15T10:30:00Z"),
+                VitalSign(type="temperature", value=98.6, unit="F", timestamp="2024-01-15T10:30:00Z"),
+                VitalSign(type="spo2", value=98, unit="%", timestamp="2024-01-15T10:30:00Z"),
+            ]
+            
+            medications = data.get("medications", [])
+            risk_scores = _calculate_risk_scores(
+                [c.model_dump() for c in conditions],
+                medications,
+                data.get("patient", {})
+            )
+            patient_status = _calculate_patient_status(
+                [c.model_dump() for c in conditions],
+                risk_scores
+            )
+            
+            total_billed = sum(c.billed_amount for c in claims)
+            total_paid = sum(c.paid_amount or 0 for c in claims)
+            total_denied = sum(c.billed_amount for c in claims if c.status == "denied")
+            
+            return Patient360Response(
+                patient=data.get("patient", {}),
+                conditions=conditions,
+                encounters=encounters,
+                claims=claims,
+                medications=medications,
+                vitals=vitals,
+                risk_scores=risk_scores,
+                patient_status=patient_status,
+                financial_summary={
+                    "total_billed": total_billed,
+                    "total_paid": total_paid,
+                    "total_denied": total_denied,
+                    "collection_rate": round(total_paid / total_billed, 2) if total_billed > 0 else 0,
+                },
+            )
         
     except HTTPException:
         raise
