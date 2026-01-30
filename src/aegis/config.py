@@ -91,7 +91,7 @@ class PostgresSettings(BaseSettings):
     )
     
     host: str = "localhost"
-    port: int = 5432
+    port: int = 5433  # Use 5433 to avoid conflict with native PostgreSQL
     user: str = "aegis"
     password: SecretStr = Field(default=SecretStr("aegis_dev_password"))
     database: str = "aegis"
