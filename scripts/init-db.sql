@@ -507,4 +507,5 @@ INSERT INTO lab_results (time, tenant_id, patient_id, test_code, test_name, valu
     ('2024-01-05 15:00:00', 'default', 'patient-005', '33914-3', 'eGFR', 38, 'mL/min/1.73m2', 90, 120, 'low', true),
     ('2024-01-05 15:00:00', 'default', 'patient-005', '30313-1', 'BNP', 850, 'pg/mL', 0, 100, 'high', true);
 
-RAISE NOTICE 'AEGIS database initialization complete with seed data!';
+-- Database initialization complete!
+DO $$ BEGIN RAISE NOTICE 'AEGIS database initialization complete with seed data!'; END $$;
