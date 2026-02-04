@@ -41,8 +41,13 @@ install:
 
 install-dev: install
 	@echo "Installing dev dependencies..."
-	pip install pytest pytest-asyncio pytest-cov ruff mypy
+	pip install pytest pytest-asyncio pytest-cov ruff mypy pre-commit
 	@echo "Done!"
+
+pre-commit-install:
+	@echo "Installing pre-commit hooks..."
+	pre-commit install || true
+	@echo "Pre-commit hooks installed (or pre-commit not available)."
 
 # ===========================
 # Demo Mode (for investors)
@@ -179,6 +184,14 @@ clean:
 	find . -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true
 	@echo "Done!"
+
+# ===========================
+# Repo Maintenance
+# ===========================
+
+git-prune:
+	@echo "Run 'scripts/run_git_prune.sh' or 'scripts/run_git_prune.ps1' in your shell with caution."
+	@echo "Example: bash scripts/run_git_prune.sh"
 
 # ===========================
 # Production
