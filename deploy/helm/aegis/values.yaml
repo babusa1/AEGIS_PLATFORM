@@ -1,0 +1,356 @@
+# =============================================================================
+# AEGIS Helm Chart Values
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Global Settings
+# -----------------------------------------------------------------------------
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: ""
+
+# -----------------------------------------------------------------------------
+# API Service
+# -----------------------------------------------------------------------------
+api:
+  replicaCount: 2
+  
+  image:
+    repository: aegis/api
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    port: 8000
+  
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    hosts:
+      - host: api.aegis-platform.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: aegis-api-tls
+        hosts:
+          - api.aegis-platform.com
+  
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  
+  env:
+    AEGIS_ENV: production
+    AEGIS_DEBUG: "false"
+    AEGIS_LOG_LEVEL: INFO
+    LLM_PROVIDER: bedrock
+  
+  # Sensitive values - use secrets
+  secretEnv:
+    - name: AEGIS_SECRET_KEY
+      secretName: aegis-secrets
+      secretKey: secret-key
+    - name: JWT_SECRET_KEY
+      secretName: aegis-secrets
+      secretKey: jwt-secret
+    - name: POSTGRES_PASSWORD
+      secretName: aegis-secrets
+      secretKey: postgres-password
+
+# -----------------------------------------------------------------------------
+# Frontend (Demo UI)
+# -----------------------------------------------------------------------------
+frontend:
+  enabled: true
+  replicaCount: 2
+  
+  image:
+    repository: aegis/frontend
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    port: 3000
+  
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    hosts:
+      - host: app.aegis-platform.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: aegis-frontend-tls
+        hosts:
+          - app.aegis-platform.com
+  
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  
+  env:
+    NEXT_PUBLIC_API_URL: https://api.aegis-platform.com
+
+# -----------------------------------------------------------------------------
+# Worker (Background Jobs)
+# -----------------------------------------------------------------------------
+worker:
+  enabled: true
+  replicaCount: 2
+  
+  image:
+    repository: aegis/worker
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+
+# -----------------------------------------------------------------------------
+# PostgreSQL (TimescaleDB)
+# -----------------------------------------------------------------------------
+postgresql:
+  enabled: true
+  
+  auth:
+    database: aegis
+    username: aegis
+    existingSecret: aegis-secrets
+    secretKeys:
+      adminPasswordKey: postgres-password
+      userPasswordKey: postgres-password
+  
+  primary:
+    persistence:
+      enabled: true
+      size: 50Gi
+    
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+    
+    # TimescaleDB extension
+    initdb:
+      scripts:
+        init-timescale.sql: |
+          CREATE EXTENSION IF NOT EXISTS timescaledb;
+  
+  metrics:
+    enabled: true
+
+# -----------------------------------------------------------------------------
+# Redis
+# -----------------------------------------------------------------------------
+redis:
+  enabled: true
+  
+  architecture: standalone
+  
+  auth:
+    enabled: true
+    existingSecret: aegis-secrets
+    existingSecretPasswordKey: redis-password
+  
+  master:
+    persistence:
+      enabled: true
+      size: 10Gi
+    
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+
+# -----------------------------------------------------------------------------
+# OpenSearch
+# -----------------------------------------------------------------------------
+opensearch:
+  enabled: true
+  
+  replicas: 2
+  
+  opensearchJavaOpts: "-Xms1g -Xmx1g"
+  
+  resources:
+    requests:
+      cpu: 500m
+      memory: 2Gi
+    limits:
+      cpu: 1000m
+      memory: 4Gi
+  
+  persistence:
+    enabled: true
+    size: 50Gi
+  
+  config:
+    opensearch.yml: |
+      cluster.name: aegis-opensearch
+      network.host: 0.0.0.0
+      plugins.security.disabled: false
+
+# -----------------------------------------------------------------------------
+# Kafka
+# -----------------------------------------------------------------------------
+kafka:
+  enabled: true
+  
+  replicaCount: 3
+  
+  persistence:
+    enabled: true
+    size: 50Gi
+  
+  resources:
+    requests:
+      cpu: 250m
+      memory: 1Gi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+  
+  zookeeper:
+    enabled: true
+    replicaCount: 3
+    persistence:
+      enabled: true
+      size: 10Gi
+
+# -----------------------------------------------------------------------------
+# JanusGraph
+# -----------------------------------------------------------------------------
+janusgraph:
+  enabled: false  # Use AWS Neptune in production
+  
+  image:
+    repository: janusgraph/janusgraph
+    tag: "1.0.0"
+  
+  resources:
+    requests:
+      cpu: 500m
+      memory: 2Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+
+# -----------------------------------------------------------------------------
+# Monitoring
+# -----------------------------------------------------------------------------
+monitoring:
+  enabled: true
+  
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+  
+  grafana:
+    enabled: true
+    ingress:
+      enabled: true
+      hosts:
+        - grafana.aegis-platform.com
+
+# -----------------------------------------------------------------------------
+# External Services (AWS)
+# -----------------------------------------------------------------------------
+aws:
+  region: us-east-1
+  
+  neptune:
+    enabled: false
+    endpoint: ""
+  
+  bedrock:
+    enabled: true
+    modelId: anthropic.claude-3-sonnet-20240229-v1:0
+  
+  cognito:
+    enabled: false
+    userPoolId: ""
+    clientId: ""
+
+# -----------------------------------------------------------------------------
+# Service Account
+# -----------------------------------------------------------------------------
+serviceAccount:
+  create: true
+  annotations:
+    eks.amazonaws.com/role-arn: ""  # Add IAM role for IRSA
+  name: aegis
+
+# -----------------------------------------------------------------------------
+# Pod Security
+# -----------------------------------------------------------------------------
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# -----------------------------------------------------------------------------
+# Network Policies
+# -----------------------------------------------------------------------------
+networkPolicy:
+  enabled: true
+  
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+  
+  egress:
+    - to:
+        - namespaceSelector: {}
+
+# -----------------------------------------------------------------------------
+# Pod Disruption Budget
+# -----------------------------------------------------------------------------
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1

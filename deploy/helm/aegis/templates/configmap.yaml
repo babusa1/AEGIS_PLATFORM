@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aegis.fullname" . }}-config
+  labels:
+    {{- include "aegis.labels" . | nindent 4 }}
+data:
+  # Application configuration
+  AEGIS_ENV: {{ .Values.api.env.AEGIS_ENV | default "production" | quote }}
+  AEGIS_DEBUG: {{ .Values.api.env.AEGIS_DEBUG | default "false" | quote }}
+  AEGIS_LOG_LEVEL: {{ .Values.api.env.AEGIS_LOG_LEVEL | default "INFO" | quote }}
+  
+  # API settings
+  AEGIS_API_HOST: "0.0.0.0"
+  AEGIS_API_PORT: "8000"
+  AEGIS_API_WORKERS: "4"
+  
+  # Database settings
+  POSTGRES_HOST: {{ include "aegis.fullname" . }}-postgresql
+  POSTGRES_PORT: "5432"
+  POSTGRES_DATABASE: {{ .Values.postgresql.auth.database | quote }}
+  POSTGRES_USER: {{ .Values.postgresql.auth.username | quote }}
+  
+  # Redis settings
+  REDIS_HOST: {{ include "aegis.fullname" . }}-redis-master
+  REDIS_PORT: "6379"
+  
+  # OpenSearch settings
+  OPENSEARCH_HOST: {{ include "aegis.fullname" . }}-opensearch
+  OPENSEARCH_PORT: "9200"
+  OPENSEARCH_USE_SSL: "true"
+  
+  # Kafka settings
+  KAFKA_BOOTSTRAP_SERVERS: {{ include "aegis.fullname" . }}-kafka:9092
+  
+  # Graph Database
+  {{- if .Values.aws.neptune.enabled }}
+  GRAPH_DB_HOST: {{ .Values.aws.neptune.endpoint | quote }}
+  GRAPH_DB_PORT: "8182"
+  GRAPH_DB_USE_SSL: "true"
+  {{- else if .Values.janusgraph.enabled }}
+  GRAPH_DB_HOST: {{ include "aegis.fullname" . }}-janusgraph
+  GRAPH_DB_PORT: "8182"
+  GRAPH_DB_USE_SSL: "false"
+  {{- end }}
+  
+  # LLM settings
+  LLM_PROVIDER: {{ .Values.api.env.LLM_PROVIDER | default "bedrock" | quote }}
+  {{- if .Values.aws.bedrock.enabled }}
+  AWS_REGION: {{ .Values.aws.region | quote }}
+  BEDROCK_MODEL_ID: {{ .Values.aws.bedrock.modelId | quote }}
+  {{- end }}
+  
+  # Auth settings
+  {{- if .Values.aws.cognito.enabled }}
+  AUTH_PROVIDER: "cognito"
+  COGNITO_USER_POOL_ID: {{ .Values.aws.cognito.userPoolId | quote }}
+  COGNITO_CLIENT_ID: {{ .Values.aws.cognito.clientId | quote }}
+  COGNITO_REGION: {{ .Values.aws.region | quote }}
+  {{- else }}
+  AUTH_PROVIDER: "local"
+  {{- end }}

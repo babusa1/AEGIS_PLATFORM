@@ -209,6 +209,7 @@ from aegis.api.routes.llm import router as llm_router
 from aegis.api.routes.rag import router as rag_router
 from aegis.api.routes.security import router as security_router
 from aegis.api.routes.ml import router as ml_router
+from aegis.integrations.cds_hooks import router as cds_hooks_router
 
 # V1 API routes
 app.include_router(auth_router, prefix="/v1")
@@ -225,6 +226,7 @@ app.include_router(llm_router, prefix="/v1")
 app.include_router(rag_router, prefix="/v1")
 app.include_router(security_router, prefix="/v1")
 app.include_router(ml_router, prefix="/v1")
+app.include_router(cds_hooks_router)  # CDS Hooks at root level per spec
 
 
 if __name__ == "__main__":

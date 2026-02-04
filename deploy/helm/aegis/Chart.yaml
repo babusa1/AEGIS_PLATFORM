@@ -1,0 +1,37 @@
+apiVersion: v2
+name: aegis
+description: AEGIS Healthcare Intelligence Platform - Helm Chart
+type: application
+version: 1.0.0
+appVersion: "0.1.0"
+
+keywords:
+  - healthcare
+  - ai
+  - clinical-decision-support
+  - denial-management
+  - patient-360
+
+home: https://github.com/babusa1/AEGIS_PLATFORM
+
+maintainers:
+  - name: AEGIS Team
+    email: team@aegis-platform.com
+
+dependencies:
+  - name: postgresql
+    version: "13.2.0"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: postgresql.enabled
+  - name: redis
+    version: "18.0.0"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: redis.enabled
+  - name: opensearch
+    version: "2.13.0"
+    repository: "https://opensearch-project.github.io/helm-charts"
+    condition: opensearch.enabled
+  - name: kafka
+    version: "26.0.0"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: kafka.enabled
