@@ -203,6 +203,9 @@ from aegis.api.routes.agents import router as agents_router
 from aegis.api.routes.denials import router as denials_router
 from aegis.api.routes.workflows import router as workflows_router
 from aegis.api.routes.orchestrator import router as orchestrator_router
+from aegis.api.routes.observability import router as observability_router
+from aegis.api.routes.integrations import router as integrations_router
+from aegis.api.routes.llm import router as llm_router
 
 # V1 API routes
 app.include_router(auth_router, prefix="/v1")
@@ -213,6 +216,9 @@ app.include_router(agents_router, prefix="/v1")
 app.include_router(denials_router, prefix="/v1")
 app.include_router(workflows_router, prefix="/v1")
 app.include_router(orchestrator_router, prefix="/v1")
+app.include_router(observability_router, prefix="/v1")
+app.include_router(integrations_router, prefix="/v1")
+app.include_router(llm_router, prefix="/v1")
 
 
 if __name__ == "__main__":
