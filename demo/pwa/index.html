@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>AEGIS PWA Demo</title>
+    <link rel="manifest" href="/pwa/manifest.json">
+  </head>
+  <body>
+    <h1>AEGIS PWA Demo</h1>
+    <div id="status">Loading status...</div>
+    <script>
+      async function loadStatus() {
+        try {
+          const resp = await fetch('/v1/observability/status');
+          const data = await resp.json();
+          document.getElementById('status').innerText = JSON.stringify(data, null, 2);
+        } catch (e) {
+          document.getElementById('status').innerText = 'Unable to fetch status';
+        }
+      }
+      loadStatus();
+    </script>
+  </body>
+</html>

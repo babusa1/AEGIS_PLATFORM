@@ -238,6 +238,10 @@ app.include_router(sdoh_router, prefix="/v1")
 app.include_router(symptoms_router, prefix="/v1")
 app.include_router(notifications_router, prefix="/v1")
 
+# GraphQL prototype mount (strawberry)
+from aegis.api.routes.graphql import graphql_app
+app.mount("/v1/graphql", graphql_app)
+
 
 if __name__ == "__main__":
     import uvicorn
