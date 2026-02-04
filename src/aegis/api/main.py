@@ -210,6 +210,11 @@ from aegis.api.routes.rag import router as rag_router
 from aegis.api.routes.security import router as security_router
 from aegis.api.routes.ml import router as ml_router
 from aegis.integrations.cds_hooks import router as cds_hooks_router
+from aegis.integrations.epic_smart import router as epic_smart_router
+from aegis.events.kafka_consumer import router as events_router
+from aegis.clinical.sdoh import router as sdoh_router
+from aegis.clinical.symptoms import router as symptoms_router
+from aegis.notifications.webhooks import router as notifications_router
 
 # V1 API routes
 app.include_router(auth_router, prefix="/v1")
@@ -227,6 +232,11 @@ app.include_router(rag_router, prefix="/v1")
 app.include_router(security_router, prefix="/v1")
 app.include_router(ml_router, prefix="/v1")
 app.include_router(cds_hooks_router)  # CDS Hooks at root level per spec
+app.include_router(epic_smart_router, prefix="/v1")
+app.include_router(events_router, prefix="/v1")
+app.include_router(sdoh_router, prefix="/v1")
+app.include_router(symptoms_router, prefix="/v1")
+app.include_router(notifications_router, prefix="/v1")
 
 
 if __name__ == "__main__":
