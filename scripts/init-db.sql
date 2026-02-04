@@ -221,6 +221,29 @@ CREATE TABLE IF NOT EXISTS claims (
 CREATE INDEX IF NOT EXISTS idx_claims_patient ON claims(patient_id);
 CREATE INDEX IF NOT EXISTS idx_claims_status ON claims(status);
 
+-- Denials table
+CREATE TABLE IF NOT EXISTS denials (
+    id VARCHAR(64) PRIMARY KEY,
+    tenant_id VARCHAR(64) NOT NULL REFERENCES tenants(id),
+    claim_id VARCHAR(64) NOT NULL REFERENCES claims(id),
+    patient_id VARCHAR(64) NOT NULL REFERENCES patients(id),
+    denial_code VARCHAR(32) NOT NULL,
+    denial_category VARCHAR(64) NOT NULL,
+    denial_reason VARCHAR(512) NOT NULL,
+    denied_amount DECIMAL(12,2) NOT NULL,
+    denial_date DATE NOT NULL,
+    appeal_deadline DATE,
+    appeal_status VARCHAR(32) DEFAULT 'pending',
+    priority VARCHAR(32) DEFAULT 'medium',
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_denials_claim ON denials(claim_id);
+CREATE INDEX IF NOT EXISTS idx_denials_patient ON denials(patient_id);
+CREATE INDEX IF NOT EXISTS idx_denials_status ON denials(appeal_status);
+CREATE INDEX IF NOT EXISTS idx_denials_deadline ON denials(appeal_deadline);
+
 -- =============================================================================
 -- TIMESCALEDB HYPERTABLES (Time-Series Data)
 -- =============================================================================
@@ -467,9 +490,45 @@ INSERT INTO claims (id, tenant_id, patient_id, encounter_id, claim_number, claim
     ('claim-010', 'default', 'patient-006', 'enc-010', 'CLM-2024-0010', 'professional', 'denied', 175.00, 0.00, 'Cigna', '2024-02-28')
 ON CONFLICT (id) DO NOTHING;
 
+-- Add more denied claims for better demo
+INSERT INTO claims (id, tenant_id, patient_id, encounter_id, claim_number, claim_type, status, billed_amount, paid_amount, payer_name, service_date, denial_reason) VALUES
+    ('claim-011', 'default', 'patient-001', 'enc-001', 'CLM-2024-0011', 'professional', 'denied', 850.00, 0.00, 'Blue Cross Blue Shield', '2024-01-20', 'PR-204: Medical necessity not established'),
+    ('claim-012', 'default', 'patient-003', 'enc-009', 'CLM-2024-0012', 'professional', 'denied', 1250.00, 0.00, 'United Healthcare', '2024-02-15', 'CO-4: Service not covered'),
+    ('claim-013', 'default', 'patient-007', 'enc-007', 'CLM-2024-0013', 'institutional', 'denied', 4500.00, 0.00, 'Medicare', '2024-01-28', 'CO-16: Missing information'),
+    ('claim-014', 'default', 'patient-011', 'enc-008', 'CLM-2024-0014', 'professional', 'denied', 325.00, 0.00, 'Medicare', '2024-02-10', 'PR-15: Authorization required'),
+    ('claim-015', 'default', 'patient-002', 'enc-003', 'CLM-2024-0015', 'institutional', 'denied', 2200.00, 0.00, 'Aetna', '2024-02-22', 'CO-11: Diagnosis inconsistent with procedure'),
+    ('claim-016', 'default', 'patient-009', NULL, 'CLM-2024-0016', 'professional', 'denied', 575.00, 0.00, 'United Healthcare', '2024-03-05', 'PR-204: Medical necessity'),
+    ('claim-017', 'default', 'patient-015', NULL, 'CLM-2024-0017', 'professional', 'denied', 12500.00, 0.00, 'Medicare', '2024-03-01', 'CO-97: Payment adjusted'),
+    ('claim-018', 'default', 'patient-004', NULL, 'CLM-2024-0018', 'professional', 'denied', 680.00, 0.00, 'Cigna', '2024-02-28', 'PR-15: Authorization required')
+ON CONFLICT (id) DO NOTHING;
+
 -- Update denied claims with denial reasons
 UPDATE claims SET denial_reason = 'CO-4: Service not covered by plan' WHERE id = 'claim-005';
 UPDATE claims SET denial_reason = 'CO-16: Missing prior authorization' WHERE id = 'claim-010';
+
+-- =============================================================================
+-- SEED DATA: Denials
+-- =============================================================================
+
+INSERT INTO denials (id, tenant_id, claim_id, patient_id, denial_code, denial_category, denial_reason, denied_amount, denial_date, appeal_deadline, appeal_status, priority) VALUES
+    -- Critical priority (deadline within 7 days from current date - simulated)
+    ('denial-001', 'default', 'claim-011', 'patient-001', 'PR-204', 'medical_necessity', 'Medical necessity not established for requested service', 850.00, '2024-01-25', '2024-02-25', 'pending', 'critical'),
+    ('denial-002', 'default', 'claim-017', 'patient-015', 'CO-97', 'payment_adjustment', 'Payment adjusted based on contract terms', 12500.00, '2024-03-05', '2024-04-05', 'pending', 'critical'),
+    
+    -- High priority
+    ('denial-003', 'default', 'claim-012', 'patient-003', 'CO-4', 'coverage', 'Service not covered under current plan benefits', 1250.00, '2024-02-20', '2024-04-20', 'in_progress', 'high'),
+    ('denial-004', 'default', 'claim-005', 'patient-005', 'CO-4', 'coverage', 'Service not covered by Medicare Part B', 450.00, '2024-02-20', '2024-04-20', 'pending', 'high'),
+    ('denial-005', 'default', 'claim-015', 'patient-002', 'CO-11', 'coding', 'Diagnosis code does not support procedure performed', 2200.00, '2024-02-27', '2024-04-27', 'pending', 'high'),
+    
+    -- Medium priority
+    ('denial-006', 'default', 'claim-013', 'patient-007', 'CO-16', 'documentation', 'Missing required clinical documentation', 4500.00, '2024-02-01', '2024-05-01', 'in_progress', 'medium'),
+    ('denial-007', 'default', 'claim-014', 'patient-011', 'PR-15', 'authorization', 'Prior authorization was not obtained', 325.00, '2024-02-15', '2024-05-15', 'pending', 'medium'),
+    ('denial-008', 'default', 'claim-010', 'patient-006', 'CO-16', 'authorization', 'Missing prior authorization for mental health services', 175.00, '2024-03-05', '2024-06-05', 'pending', 'medium'),
+    
+    -- Lower priority  
+    ('denial-009', 'default', 'claim-016', 'patient-009', 'PR-204', 'medical_necessity', 'Medical necessity documentation insufficient', 575.00, '2024-03-10', '2024-06-10', 'pending', 'medium'),
+    ('denial-010', 'default', 'claim-018', 'patient-004', 'PR-15', 'authorization', 'Prior authorization required but not obtained', 680.00, '2024-03-05', '2024-06-05', 'appealed', 'low')
+ON CONFLICT (id) DO NOTHING;
 
 -- =============================================================================
 -- SEED DATA: Sample Vitals (TimescaleDB)

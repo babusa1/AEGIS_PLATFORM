@@ -200,6 +200,9 @@ from aegis.api.routes.ingestion import router as ingestion_router
 from aegis.api.routes.patients import router as patients_router
 from aegis.api.routes.claims import router as claims_router
 from aegis.api.routes.agents import router as agents_router
+from aegis.api.routes.denials import router as denials_router
+from aegis.api.routes.workflows import router as workflows_router
+from aegis.api.routes.orchestrator import router as orchestrator_router
 
 # V1 API routes
 app.include_router(auth_router, prefix="/v1")
@@ -207,6 +210,9 @@ app.include_router(ingestion_router, prefix="/v1")
 app.include_router(patients_router, prefix="/v1")
 app.include_router(claims_router, prefix="/v1")
 app.include_router(agents_router, prefix="/v1")
+app.include_router(denials_router, prefix="/v1")
+app.include_router(workflows_router, prefix="/v1")
+app.include_router(orchestrator_router, prefix="/v1")
 
 
 if __name__ == "__main__":

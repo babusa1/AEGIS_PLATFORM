@@ -290,6 +290,157 @@ async def discover_insights(
         )
 
 
+class OrchestratorRequest(BaseModel):
+    """Request for orchestrator agent."""
+    query: str = Field(..., description="Natural language query for the orchestrator")
+
+
+class OrchestratorResponse(BaseModel):
+    """Response from orchestrator agent."""
+    answer: str
+    task_type: str | None = None
+    activities: list[dict] = Field(default_factory=list)
+    insights: list[str] = Field(default_factory=list)
+    confidence: float = 0.0
+    data_sources_used: list[str] = Field(default_factory=list)
+
+
+class TriageResponse(BaseModel):
+    """Response from triage agent."""
+    report: str
+    alerts: list[dict] = Field(default_factory=list)
+    priority_counts: dict = Field(default_factory=dict)
+    recommendations: list[str] = Field(default_factory=list)
+    generated_at: str | None = None
+
+
+@router.post("/orchestrate", response_model=OrchestratorResponse)
+async def run_orchestrator(
+    request: OrchestratorRequest,
+    tenant: TenantContext = Depends(get_tenant_context),
+):
+    """
+    Run the Orchestrator Agent.
+    
+    The Orchestrator coordinates multiple specialized agents and demonstrates
+    how the Data Moat powers intelligent healthcare operations.
+    
+    **Example Queries:**
+    - "Review patient-001" → Patient summary with risk analysis
+    - "Handle denial backlog" → Denial intelligence and appeal recommendations
+    - "Run clinical triage" → Identify patients needing attention
+    
+    **Data Sources Accessed:**
+    - PostgreSQL (patient demographics, conditions, claims, denials)
+    - TimescaleDB (vitals, lab results)
+    - Graph DB (clinical relationships)
+    """
+    from aegis.agents.orchestrator import OrchestratorAgent
+    from aegis.db.clients import get_postgres_pool
+    
+    try:
+        pool = get_postgres_pool()
+        agent = OrchestratorAgent(pool, tenant.tenant_id)
+        
+        result = await agent.run(request.query, tenant.user_id)
+        
+        # Extract data sources from activities
+        data_sources = set()
+        for activity in result.get("activities", []):
+            sources = activity.get("data_sources", [])
+            data_sources.update(sources)
+        
+        return OrchestratorResponse(
+            answer=result.get("answer", "Analysis complete"),
+            task_type=result.get("task_type"),
+            activities=result.get("activities", []),
+            insights=result.get("insights", []),
+            confidence=result.get("confidence", 0.0),
+            data_sources_used=list(data_sources),
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Orchestrator failed: {str(e)}",
+        )
+
+
+@router.post("/triage", response_model=TriageResponse)
+async def run_triage(
+    tenant: TenantContext = Depends(get_tenant_context),
+):
+    """
+    Run the Clinical Triage Agent.
+    
+    Scans the Data Moat for patients requiring clinical attention:
+    - Critical/abnormal lab values
+    - Concerning vital signs
+    - High-risk patients
+    
+    **Returns:**
+    - Prioritized alert list (Critical → High → Medium → Low)
+    - Actionable recommendations
+    - Patient-specific findings
+    
+    **Data Sources:**
+    - TimescaleDB: Real-time vitals and lab results
+    - PostgreSQL: Patient conditions, medications, encounters
+    """
+    from aegis.agents.triage import TriageAgent
+    from aegis.db.clients import get_postgres_pool
+    
+    try:
+        pool = get_postgres_pool()
+        agent = TriageAgent(pool, tenant.tenant_id)
+        
+        result = await agent.run()
+        
+        return TriageResponse(
+            report=result.get("report", "Triage complete"),
+            alerts=result.get("alerts", []),
+            priority_counts=result.get("priority_counts", {}),
+            recommendations=result.get("recommendations", []),
+            generated_at=result.get("generated_at"),
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Triage agent failed: {str(e)}",
+        )
+
+
+@router.get("/data-moat/tools")
+async def get_data_moat_tools():
+    """
+    Get available Data Moat tools.
+    
+    Shows all the tools agents can use to access the unified data layer.
+    """
+    from aegis.agents.data_tools import DataMoatTools
+    
+    tools = DataMoatTools(None, "demo")
+    all_tools = tools.get_all_tools()
+    
+    return {
+        "description": "Data Moat - Unified Healthcare Data Layer",
+        "data_sources": [
+            {"name": "PostgreSQL", "type": "relational", "data": "Demographics, conditions, medications, claims, denials"},
+            {"name": "TimescaleDB", "type": "timeseries", "data": "Vitals, lab results, wearable metrics"},
+            {"name": "Graph DB", "type": "graph", "data": "Clinical relationships, care pathways"},
+            {"name": "Vector DB", "type": "vector", "data": "Semantic search, similar patients"},
+        ],
+        "tools": {
+            name: {
+                "description": tool["description"],
+                "parameters": tool.get("parameters", {}),
+            }
+            for name, tool in all_tools.items()
+        },
+    }
+
+
 @router.get("/status")
 async def get_agent_status():
     """
@@ -300,10 +451,17 @@ async def get_agent_status():
     
     return {
         "agents": {
-            "general": {"status": "available", "description": "General-purpose query agent"},
+            "orchestrator": {"status": "available", "description": "Master coordinator - routes to specialized agents"},
+            "triage": {"status": "available", "description": "Clinical monitoring - identifies patients needing attention"},
             "unified_view": {"status": "available", "description": "Patient 360 view agent"},
             "action": {"status": "available", "description": "Denial appeal agent"},
             "insight": {"status": "available", "description": "Insight discovery agent"},
+        },
+        "data_moat": {
+            "postgresql": "connected",
+            "timescaledb": "connected", 
+            "graph_db": "mock",
+            "vector_db": "mock",
         },
         "llm_provider": settings.llm.llm_provider,
         "model": settings.llm.bedrock_model_id if settings.llm.llm_provider == "bedrock" else "mock",

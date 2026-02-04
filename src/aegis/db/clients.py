@@ -219,6 +219,19 @@ def get_db_clients() -> DatabaseClients:
     return _clients
 
 
+def get_postgres_pool():
+    """
+    Get the PostgreSQL connection pool.
+    
+    Returns:
+        asyncpg.Pool or None if not available
+    """
+    global _clients
+    if _clients is None:
+        return None
+    return _clients.postgres
+
+
 # =============================================================================
 # Mock Clients (for development without actual databases)
 # =============================================================================

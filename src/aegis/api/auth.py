@@ -231,6 +231,19 @@ async def get_current_user(
         async def protected_route(user: User = Depends(get_current_user)):
             return {"user": user.email}
     """
+    settings = get_settings()
+    
+    # DEV MODE: Auto-authenticate as admin in development
+    if settings.app.env == "development" and bearer is None:
+        logger.debug("Dev mode: auto-authenticating as admin")
+        return User(
+            id="user-001",
+            email="admin@aegis.health",
+            tenant_id="default",
+            roles=["admin", "user"],
+            full_name="AEGIS Admin (Dev Mode)",
+        )
+    
     if bearer is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

@@ -329,6 +329,234 @@ class PostgresPatientRepository:
             }
 
 
+class PostgresDenialsRepository:
+    """
+    Denials repository backed by PostgreSQL.
+    
+    Provides access to denial data for denial management and analytics.
+    """
+    
+    def __init__(self, pool):
+        self.pool = pool
+    
+    async def list_denials(
+        self,
+        tenant_id: str = "default",
+        limit: int = 50,
+        offset: int = 0,
+        status: str | None = None,
+        priority: str | None = None,
+        category: str | None = None
+    ) -> tuple[list[dict], int]:
+        """
+        List denials with filtering options.
+        
+        Returns:
+            Tuple of (denials list, total count)
+        """
+        async with self.pool.acquire() as conn:
+            # Build WHERE clause
+            conditions = ["d.tenant_id = $1"]
+            params = [tenant_id]
+            param_idx = 2
+            
+            if status:
+                conditions.append(f"d.appeal_status = ${param_idx}")
+                params.append(status)
+                param_idx += 1
+            
+            if priority:
+                conditions.append(f"d.priority = ${param_idx}")
+                params.append(priority)
+                param_idx += 1
+            
+            if category:
+                conditions.append(f"d.denial_category = ${param_idx}")
+                params.append(category)
+                param_idx += 1
+            
+            where_clause = " AND ".join(conditions)
+            
+            # Get total count
+            count_query = f"SELECT COUNT(*) FROM denials d WHERE {where_clause}"
+            total = await conn.fetchval(count_query, *params)
+            
+            # Get denials with patient and claim info
+            query = f"""
+                SELECT 
+                    d.id,
+                    d.claim_id,
+                    d.patient_id,
+                    d.denial_code,
+                    d.denial_category,
+                    d.denial_reason,
+                    d.denied_amount,
+                    d.denial_date,
+                    d.appeal_deadline,
+                    d.appeal_status,
+                    d.priority,
+                    d.notes,
+                    c.claim_number,
+                    c.payer_name,
+                    c.service_date,
+                    p.given_name,
+                    p.family_name,
+                    p.mrn
+                FROM denials d
+                JOIN claims c ON d.claim_id = c.id
+                JOIN patients p ON d.patient_id = p.id
+                WHERE {where_clause}
+                ORDER BY 
+                    CASE d.priority 
+                        WHEN 'critical' THEN 1 
+                        WHEN 'high' THEN 2 
+                        WHEN 'medium' THEN 3 
+                        ELSE 4 
+                    END,
+                    d.appeal_deadline ASC
+                LIMIT ${param_idx} OFFSET ${param_idx + 1}
+            """
+            params.extend([limit, offset])
+            
+            rows = await conn.fetch(query, *params)
+            
+            denials = []
+            for row in rows:
+                # Calculate days to deadline
+                days_to_deadline = None
+                if row["appeal_deadline"]:
+                    from datetime import date as date_type
+                    today = date_type.today()
+                    delta = row["appeal_deadline"] - today
+                    days_to_deadline = delta.days
+                
+                denials.append({
+                    "id": row["id"],
+                    "claim_id": row["claim_id"],
+                    "claim_number": row["claim_number"],
+                    "patient_id": row["patient_id"],
+                    "patient_name": f"{row['given_name']} {row['family_name']}",
+                    "mrn": row["mrn"],
+                    "payer": row["payer_name"],
+                    "denial_code": row["denial_code"],
+                    "denial_category": row["denial_category"],
+                    "denial_reason": row["denial_reason"],
+                    "denied_amount": float(row["denied_amount"]),
+                    "service_date": str(row["service_date"]) if row["service_date"] else None,
+                    "denial_date": str(row["denial_date"]) if row["denial_date"] else None,
+                    "appeal_deadline": str(row["appeal_deadline"]) if row["appeal_deadline"] else None,
+                    "days_to_deadline": days_to_deadline,
+                    "appeal_status": row["appeal_status"],
+                    "priority": row["priority"],
+                    "notes": row["notes"],
+                })
+            
+            return denials, total
+    
+    async def get_denial(self, denial_id: str) -> dict | None:
+        """Get a single denial by ID with full details."""
+        async with self.pool.acquire() as conn:
+            query = """
+                SELECT 
+                    d.*,
+                    c.claim_number, c.payer_name, c.service_date, c.billed_amount,
+                    p.given_name, p.family_name, p.mrn, p.birth_date, p.gender
+                FROM denials d
+                JOIN claims c ON d.claim_id = c.id
+                JOIN patients p ON d.patient_id = p.id
+                WHERE d.id = $1
+            """
+            row = await conn.fetchrow(query, denial_id)
+            
+            if not row:
+                return None
+            
+            return dict(row)
+    
+    async def get_denial_analytics(self, tenant_id: str = "default") -> dict:
+        """Get denial analytics summary."""
+        async with self.pool.acquire() as conn:
+            # Total stats
+            stats_query = """
+                SELECT 
+                    COUNT(*) as total_denials,
+                    SUM(denied_amount) as total_denied_amount,
+                    COUNT(*) FILTER (WHERE appeal_status = 'pending') as pending_count,
+                    COUNT(*) FILTER (WHERE appeal_status = 'in_progress') as in_progress_count,
+                    COUNT(*) FILTER (WHERE appeal_status = 'appealed') as appealed_count,
+                    COUNT(*) FILTER (WHERE appeal_status = 'won') as won_count,
+                    COUNT(*) FILTER (WHERE appeal_status = 'lost') as lost_count,
+                    COUNT(*) FILTER (WHERE appeal_deadline < CURRENT_DATE + INTERVAL '7 days') as urgent_count
+                FROM denials
+                WHERE tenant_id = $1
+            """
+            stats = await conn.fetchrow(stats_query, tenant_id)
+            
+            # By category
+            category_query = """
+                SELECT 
+                    denial_category,
+                    COUNT(*) as count,
+                    SUM(denied_amount) as amount
+                FROM denials
+                WHERE tenant_id = $1
+                GROUP BY denial_category
+                ORDER BY amount DESC
+            """
+            by_category = await conn.fetch(category_query, tenant_id)
+            
+            # By payer
+            payer_query = """
+                SELECT 
+                    c.payer_name,
+                    COUNT(*) as count,
+                    SUM(d.denied_amount) as amount
+                FROM denials d
+                JOIN claims c ON d.claim_id = c.id
+                WHERE d.tenant_id = $1
+                GROUP BY c.payer_name
+                ORDER BY amount DESC
+            """
+            by_payer = await conn.fetch(payer_query, tenant_id)
+            
+            # Calculate win rate
+            total_resolved = (stats["won_count"] or 0) + (stats["lost_count"] or 0)
+            win_rate = (stats["won_count"] or 0) / total_resolved if total_resolved > 0 else 0.68  # Default demo rate
+            
+            return {
+                "total_denials": stats["total_denials"] or 0,
+                "total_denied_amount": float(stats["total_denied_amount"] or 0),
+                "pending_count": stats["pending_count"] or 0,
+                "in_progress_count": stats["in_progress_count"] or 0,
+                "appealed_count": stats["appealed_count"] or 0,
+                "won_count": stats["won_count"] or 0,
+                "lost_count": stats["lost_count"] or 0,
+                "urgent_count": stats["urgent_count"] or 0,
+                "win_rate": round(win_rate, 2),
+                "by_category": [
+                    {"category": r["denial_category"], "count": r["count"], "amount": float(r["amount"])}
+                    for r in by_category
+                ],
+                "by_payer": [
+                    {"payer": r["payer_name"], "count": r["count"], "amount": float(r["amount"])}
+                    for r in by_payer
+                ],
+            }
+    
+    async def update_denial_status(self, denial_id: str, status: str, notes: str | None = None) -> bool:
+        """Update denial appeal status."""
+        async with self.pool.acquire() as conn:
+            if notes:
+                query = """
+                    UPDATE denials SET appeal_status = $2, notes = $3 WHERE id = $1
+                """
+                await conn.execute(query, denial_id, status, notes)
+            else:
+                query = "UPDATE denials SET appeal_status = $2 WHERE id = $1"
+                await conn.execute(query, denial_id, status)
+            return True
+
+
 async def create_postgres_pool(settings) -> Any:
     """
     Create an asyncpg connection pool.

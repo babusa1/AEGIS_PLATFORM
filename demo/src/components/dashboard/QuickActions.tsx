@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { 
-  UserSearch, 
+  Users, 
   FileSearch, 
   PenTool, 
   Lightbulb,
@@ -14,7 +14,7 @@ const actions = [
   {
     name: 'Patient 360',
     description: 'Generate unified patient view',
-    icon: UserSearch,
+    icon: Users,
     href: '/agents?action=patient-360',
     color: 'bg-blue-500',
   },
