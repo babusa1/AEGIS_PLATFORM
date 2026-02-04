@@ -337,11 +337,13 @@ class TerminologyService:
     Provides single interface to all terminology systems.
     """
     
-    def __init__(self):
+    def __init__(self, redis_client=None):
         self.icd10 = ICD10Lookup()
         self.cpt = CPTLookup()
         self.snomed = SNOMEDLookup()
         self.rxnorm = RxNormLookup()
+        self.loinc = LOINCLookup()
+        self._cached_service = CachedTerminologyService(redis_client) if redis_client else None
     
     def lookup(self, code: str, system: str = None) -> Optional[CodeInfo]:
         """Look up a code, auto-detecting system if not specified."""
@@ -351,6 +353,8 @@ class TerminologyService:
                 system = "icd10"
             elif code.isdigit() and len(code) == 5:
                 system = "cpt"
+            elif "-" in code and code.replace("-", "").isdigit():
+                system = "loinc"
             elif code.isdigit() and len(code) > 5:
                 system = "snomed"
         
@@ -364,9 +368,11 @@ class TerminologyService:
             return self.snomed.lookup(code)
         elif system in ["rxnorm", "ndc"]:
             return self.rxnorm.lookup(code)
+        elif system in ["loinc"]:
+            return self.loinc.lookup(code)
         
         # Try all systems
-        for lookup in [self.icd10, self.cpt, self.snomed, self.rxnorm]:
+        for lookup in [self.loinc, self.icd10, self.cpt, self.snomed, self.rxnorm]:
             result = lookup.lookup(code)
             if result:
                 return result
@@ -380,7 +386,7 @@ class TerminologyService:
         max_results: int = 10,
     ) -> Dict[str, CodeSearchResult]:
         """Search across terminology systems."""
-        systems = systems or ["icd10", "snomed", "rxnorm"]
+        systems = systems or ["icd10", "snomed", "rxnorm", "loinc"]
         results = {}
         
         tasks = []
@@ -390,6 +396,8 @@ class TerminologyService:
             tasks.append(("snomed", self.snomed.search(query, max_results)))
         if "rxnorm" in systems:
             tasks.append(("rxnorm", self.rxnorm.search(query, max_results)))
+        if "loinc" in systems:
+            tasks.append(("loinc", self.loinc.search(query, max_results)))
         
         for system, task in tasks:
             try:
@@ -408,5 +416,11 @@ class TerminologyService:
             return self.icd10.validate(code)
         elif system in ["cpt"]:
             return self.cpt.validate(code)
+        elif system in ["loinc"]:
+            return self.loinc.validate(code)
         
         return True  # Default to valid for unknown systems
+    
+    async def get_loinc_panel(self, panel_code: str) -> List[CodeInfo]:
+        """Get LOINC panel components."""
+        return await self.loinc.get_panels(panel_code)

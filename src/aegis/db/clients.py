@@ -26,6 +26,7 @@ class DatabaseClients:
     graph: Any = None
     opensearch: Any = None
     redis: Any = None
+    dynamodb: Any = None
     
     _initialized: bool = field(default=False, repr=False)
     
@@ -133,6 +134,44 @@ async def init_redis(settings) -> Any:
         return MockRedis()
 
 
+async def init_dynamodb(settings) -> Any:
+    """Initialize DynamoDB client."""
+    try:
+        from aegis.db.dynamodb import DynamoDBClient, MockDynamoDBClient
+        
+        if hasattr(settings, 'dynamodb'):
+            client = DynamoDBClient(
+                region=settings.dynamodb.region,
+                endpoint_url=settings.dynamodb.endpoint_url,
+                table_prefix=settings.dynamodb.table_prefix,
+            )
+            
+            connected = await client.connect()
+            if connected:
+                await client.create_tables()
+                logger.info("DynamoDB connected")
+                return client
+        
+        # Fall back to mock
+        logger.warning("Using mock DynamoDB client")
+        mock_client = MockDynamoDBClient()
+        await mock_client.connect()
+        return mock_client
+        
+    except ImportError:
+        logger.warning("DynamoDB dependencies not installed, using mock client")
+        from aegis.db.dynamodb import MockDynamoDBClient
+        mock_client = MockDynamoDBClient()
+        await mock_client.connect()
+        return mock_client
+    except Exception as e:
+        logger.warning("DynamoDB connection failed, using mock", error=str(e))
+        from aegis.db.dynamodb import MockDynamoDBClient
+        mock_client = MockDynamoDBClient()
+        await mock_client.connect()
+        return mock_client
+
+
 async def init_db_clients(settings) -> DatabaseClients:
     """
     Initialize all database clients.
@@ -144,11 +183,12 @@ async def init_db_clients(settings) -> DatabaseClients:
     logger.info("Initializing database connections...")
     
     # Initialize all connections in parallel
-    postgres, graph, opensearch, redis = await asyncio.gather(
+    postgres, graph, opensearch, redis, dynamodb = await asyncio.gather(
         init_postgres(settings),
         init_graph(settings),
         init_opensearch(settings),
         init_redis(settings),
+        init_dynamodb(settings),
         return_exceptions=True
     )
     
@@ -165,12 +205,17 @@ async def init_db_clients(settings) -> DatabaseClients:
     if isinstance(redis, Exception):
         logger.error("Redis init failed", error=str(redis))
         redis = MockRedis()
+    if isinstance(dynamodb, Exception):
+        logger.error("DynamoDB init failed", error=str(dynamodb))
+        from aegis.db.dynamodb import MockDynamoDBClient
+        dynamodb = MockDynamoDBClient()
     
     _clients = DatabaseClients(
         postgres=postgres,
         graph=graph,
         opensearch=opensearch,
         redis=redis,
+        dynamodb=dynamodb,
         _initialized=True
     )
     

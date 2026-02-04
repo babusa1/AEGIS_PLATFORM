@@ -147,6 +147,29 @@ class KafkaSettings(BaseSettings):
     agent_actions_topic: str = "aegis.agent.actions"
 
 
+class DynamoDBSettings(BaseSettings):
+    """DynamoDB settings for workflow state and sessions."""
+    
+    model_config = SettingsConfigDict(
+        env_prefix="DYNAMODB_",
+        env_file=".env",
+        extra="ignore",
+    )
+    
+    region: str = "us-east-1"
+    endpoint_url: str | None = None  # For local development (e.g., http://localhost:8000)
+    table_prefix: str = "aegis"
+    
+    # AWS credentials (optional, can use IAM roles)
+    aws_access_key_id: str | None = None
+    aws_secret_access_key: SecretStr | None = None
+    
+    @property
+    def is_local(self) -> bool:
+        """Check if using local DynamoDB."""
+        return self.endpoint_url is not None
+
+
 class LLMSettings(BaseSettings):
     """LLM (Bedrock/Ollama/Mock) settings."""
     
@@ -228,6 +251,7 @@ class Settings:
         self.redis = RedisSettings()
         self.opensearch = OpenSearchSettings()
         self.kafka = KafkaSettings()
+        self.dynamodb = DynamoDBSettings()
         self.llm = LLMSettings()
         self.auth = AuthSettings()
         self.tenant = TenantSettings()
