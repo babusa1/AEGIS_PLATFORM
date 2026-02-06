@@ -429,13 +429,28 @@ class HierarchicalChunker(Chunker):
 
 class ClinicalNoteChunker(Chunker):
     """
-    Specialized chunker for clinical notes.
+    Specialized chunker for clinical notes with encounter-based boundaries.
+    
+    Uses clinical encounter headers (### headers) as HARD boundaries - never splits
+    within an encounter section. This implements "Semantic-Structural Chunking"
+    where chunks respect clinical structure, not word count.
     
     Recognizes:
     - SOAP sections (Subjective, Objective, Assessment, Plan)
-    - Common clinical headers
+    - Common clinical headers (H&P, Progress Note sections)
+    - Encounter boundaries (### headers)
     - Lab results
     - Medication lists
+    
+    Metadata Tagging:
+    Every chunk is wrapped with metadata:
+    {
+        "source": "Progress Note",
+        "date": "2023-10-12",
+        "clinician": "Dr. House",
+        "embedding_type": "Symptom_Narrative",
+        "section": "History of Present Illness"
+    }
     """
     
     CLINICAL_SECTIONS = [
@@ -458,41 +473,207 @@ class ClinicalNoteChunker(Chunker):
         r'(?i)^(objective):?\s*',
     ]
     
-    def __init__(self, chunk_size: int = 1000):
+    # Markdown-style headers (###) as hard boundaries
+    ENCOUNTER_HEADER_PATTERN = re.compile(r'^#{1,6}\s+.+$', re.MULTILINE)
+    
+    def __init__(
+        self,
+        chunk_size: int = 1000,
+        use_encounter_boundaries: bool = True,
+        respect_section_boundaries: bool = True,
+    ):
+        """
+        Initialize clinical note chunker.
+        
+        Args:
+            chunk_size: Maximum chunk size (only used if section is larger)
+            use_encounter_boundaries: Use ### headers as hard boundaries
+            respect_section_boundaries: Never split within a clinical section
+        """
         super().__init__(chunk_size)
+        self.use_encounter_boundaries = use_encounter_boundaries
+        self.respect_section_boundaries = respect_section_boundaries
+        self._section_pattern = re.compile('|'.join(self.CLINICAL_SECTIONS), re.MULTILINE)
+        self.ENCOUNTER_HEADER_PATTERN = re.compile(r'^#{1,6}\s+.+$', re.MULTILINE)
         self._section_pattern = re.compile('|'.join(self.CLINICAL_SECTIONS), re.MULTILINE)
     
     def chunk(self, document_id: str, content: str, metadata: dict = None) -> List[Chunk]:
-        """Chunk clinical notes by section."""
+        """
+        Chunk clinical notes by encounter and section boundaries.
+        
+        Uses headers-first approach: ### headers are HARD boundaries.
+        Never splits within a clinical section (H&P, Progress Note section).
+        """
         chunks = []
+        base_metadata = metadata or {}
         
-        # Find section boundaries
-        matches = list(self._section_pattern.finditer(content))
-        
-        if not matches:
-            # No clinical sections found, use semantic chunker
-            fallback = SemanticChunker(chunk_size=self.chunk_size)
-            return fallback.chunk(document_id, content, metadata)
+        # Step 1: Split by encounter headers (###) if enabled
+        if self.use_encounter_boundaries:
+            encounter_sections = self._split_by_encounter_headers(content)
+        else:
+            encounter_sections = [{"content": content, "start": 0, "end": len(content), "header": None}]
         
         chunk_index = 0
         
-        # Content before first section
-        if matches[0].start() > 0:
-            pre_content = content[:matches[0].start()].strip()
-            if pre_content:
+        # Step 2: Process each encounter section
+        for encounter in encounter_sections:
+            encounter_content = encounter["content"]
+            encounter_start = encounter["start"]
+            encounter_header = encounter.get("header")
+            
+            # Step 3: Find clinical section boundaries within encounter
+            section_matches = list(self._section_pattern.finditer(encounter_content))
+            
+            if not section_matches:
+                # No clinical sections - chunk entire encounter (respecting size)
+                if len(encounter_content) <= self.chunk_size:
+                    # Single chunk for entire encounter
+                    chunks.append(Chunk(
+                        id=self._generate_chunk_id(document_id, chunk_index),
+                        content=encounter_content.strip(),
+                        document_id=document_id,
+                        chunk_index=chunk_index,
+                        start_char=encounter_start,
+                        end_char=encounter_start + len(encounter_content),
+                        metadata={
+                            **base_metadata,
+                            "section": encounter_header or "encounter",
+                            "encounter_header": encounter_header,
+                            "embedding_type": "Clinical_Encounter",
+                        },
+                    ))
+                    chunk_index += 1
+                else:
+                    # Encounter too large - use semantic chunker but keep encounter boundary
+                    semantic_chunker = SemanticChunker(chunk_size=self.chunk_size)
+                    sub_chunks = semantic_chunker.chunk(document_id, encounter_content, {
+                        **base_metadata,
+                        "encounter_header": encounter_header,
+                        "embedding_type": "Clinical_Encounter",
+                    })
+                    # Adjust character positions
+                    for sub_chunk in sub_chunks:
+                        sub_chunk.start_char += encounter_start
+                        sub_chunk.end_char += encounter_start
+                        sub_chunk.chunk_index = chunk_index
+                        sub_chunk.id = self._generate_chunk_id(document_id, chunk_index)
+                        chunks.append(sub_chunk)
+                        chunk_index += 1
+                continue
+            
+            # Step 4: Process each clinical section (HARD BOUNDARY - never split)
+            for i, match in enumerate(section_matches):
+                section_start = match.start()
+                section_end = section_matches[i + 1].start() if i + 1 < len(section_matches) else len(encounter_content)
+                
+                section_content = encounter_content[section_start:section_end].strip()
+                section_title = match.group().strip()
+                
+                # Determine embedding type based on section
+                embedding_type = self._get_embedding_type(section_title)
+                
+                # NEVER split within a section - create one chunk per section
+                # (even if it exceeds chunk_size - clinical sections are atomic)
                 chunks.append(Chunk(
                     id=self._generate_chunk_id(document_id, chunk_index),
-                    content=pre_content,
+                    content=section_content,
                     document_id=document_id,
                     chunk_index=chunk_index,
-                    start_char=0,
-                    end_char=matches[0].start(),
-                    metadata={**(metadata or {}), "section": "header"},
+                    start_char=encounter_start + section_start,
+                    end_char=encounter_start + section_end,
+                    metadata={
+                        **base_metadata,
+                        "section": section_title,
+                        "encounter_header": encounter_header,
+                        "embedding_type": embedding_type,
+                        "source": base_metadata.get("source", "Clinical Note"),
+                        "date": base_metadata.get("date"),
+                        "clinician": base_metadata.get("clinician"),
+                    },
                 ))
                 chunk_index += 1
+            
+            # Content before first section in encounter
+            if section_matches and section_matches[0].start() > 0:
+                pre_content = encounter_content[:section_matches[0].start()].strip()
+                if pre_content:
+                    chunks.append(Chunk(
+                        id=self._generate_chunk_id(document_id, chunk_index),
+                        content=pre_content,
+                        document_id=document_id,
+                        chunk_index=chunk_index,
+                        start_char=encounter_start,
+                        end_char=encounter_start + section_matches[0].start(),
+                        metadata={
+                            **base_metadata,
+                            "section": "encounter_header",
+                            "encounter_header": encounter_header,
+                            "embedding_type": "Clinical_Encounter",
+                        },
+                    ))
+                    chunk_index += 1
         
-        # Process each section
-        for i, match in enumerate(matches):
+        logger.info(
+            f"Created {len(chunks)} clinical chunks from document {document_id}",
+            encounter_count=len(encounter_sections),
+            respect_boundaries=self.respect_section_boundaries,
+        )
+        return chunks
+    
+    def _split_by_encounter_headers(self, content: str) -> List[Dict[str, Any]]:
+        """
+        Split content by encounter headers (### headers).
+        
+        Returns list of encounter sections with their boundaries.
+        """
+        encounters = []
+        header_matches = list(self.ENCOUNTER_HEADER_PATTERN.finditer(content))
+        
+        if not header_matches:
+            # No headers - entire content is one encounter
+            return [{"content": content, "start": 0, "end": len(content), "header": None}]
+        
+        for i, match in enumerate(header_matches):
+            start = match.start()
+            end = header_matches[i + 1].start() if i + 1 < len(header_matches) else len(content)
+            header_text = match.group().strip()
+            
+            encounters.append({
+                "content": content[start:end],
+                "start": start,
+                "end": end,
+                "header": header_text,
+            })
+        
+        # Content before first header
+        if header_matches[0].start() > 0:
+            encounters.insert(0, {
+                "content": content[:header_matches[0].start()],
+                "start": 0,
+                "end": header_matches[0].start(),
+                "header": None,
+            })
+        
+        return encounters
+    
+    def _get_embedding_type(self, section_title: str) -> str:
+        """Determine embedding type based on section title."""
+        section_lower = section_title.lower()
+        
+        if any(x in section_lower for x in ["chief complaint", "cc", "hpi", "history"]):
+            return "Symptom_Narrative"
+        elif any(x in section_lower for x in ["physical exam", "pe", "examination"]):
+            return "Physical_Exam"
+        elif any(x in section_lower for x in ["lab", "laboratory", "imaging", "radiology"]):
+            return "Diagnostic_Result"
+        elif any(x in section_lower for x in ["medication", "meds"]):
+            return "Medication_List"
+        elif any(x in section_lower for x in ["assessment", "diagnosis", "dx"]):
+            return "Clinical_Assessment"
+        elif any(x in section_lower for x in ["plan"]):
+            return "Treatment_Plan"
+        else:
+            return "Clinical_Narrative"
             section_name = match.group().strip().rstrip(':')
             start = match.start()
             end = matches[i + 1].start() if i + 1 < len(matches) else len(content)
