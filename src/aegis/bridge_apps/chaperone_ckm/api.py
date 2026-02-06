@@ -75,11 +75,15 @@ class VitalLogResponse(BaseModel):
 # Helper function to get service
 def get_ckm_service(
     patient_id: str,
-    current_user: dict,
+    current_user: dict = None,
 ) -> ChaperoneCKMService:
     """Get ChaperoneCKMService instance."""
     if not ChaperoneCKMService:
         raise HTTPException(status_code=503, detail="ChaperoneCKMService not available")
+    
+    # Ensure current_user is not None
+    if current_user is None:
+        current_user = {"id": "demo", "tenant_id": "default", "roles": ["user"]}
     
     data_moat_tools = None
     ckm_agent = None
