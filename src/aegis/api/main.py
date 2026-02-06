@@ -325,26 +325,46 @@ async def global_exception_handler(request: Request, exc: Exception):
 # Include Routers
 # =============================================================================
 
-from aegis.api.routes.auth import router as auth_router
-from aegis.api.routes.ingestion import router as ingestion_router
-from aegis.api.routes.patients import router as patients_router
-from aegis.api.routes.claims import router as claims_router
-from aegis.api.routes.agents import router as agents_router
-from aegis.api.routes.denials import router as denials_router
-from aegis.api.routes.workflows import router as workflows_router
-from aegis.api.routes.orchestrator import router as orchestrator_router
-from aegis.api.routes.observability import router as observability_router
-from aegis.api.routes.integrations import router as integrations_router
-from aegis.api.routes.llm import router as llm_router
-from aegis.api.routes.rag import router as rag_router
-from aegis.api.routes.security import router as security_router
-from aegis.api.routes.ml import router as ml_router
-from aegis.integrations.cds_hooks import router as cds_hooks_router
-from aegis.integrations.epic_smart import router as epic_smart_router
-from aegis.events.kafka_consumer import router as events_router
-from aegis.clinical.sdoh import router as sdoh_router
-from aegis.clinical.symptoms import router as symptoms_router
-from aegis.notifications.webhooks import router as notifications_router
+# Core routes (required for basic functionality)
+try:
+    from aegis.api.routes.auth import router as auth_router
+    app.include_router(auth_router, prefix="/v1")
+except (ImportError, AttributeError) as e:
+    logger.warning(f"Auth router not available: {e}")
+
+# Optional routes (graceful degradation)
+optional_routers = [
+    ("aegis.api.routes.ingestion", "ingestion_router", "/v1"),
+    ("aegis.api.routes.patients", "patients_router", "/v1"),
+    ("aegis.api.routes.claims", "claims_router", "/v1"),
+    ("aegis.api.routes.agents", "agents_router", "/v1"),
+    ("aegis.api.routes.denials", "denials_router", "/v1"),
+    ("aegis.api.routes.workflows", "workflows_router", "/v1"),
+    ("aegis.api.routes.orchestrator", "orchestrator_router", "/v1"),
+    ("aegis.api.routes.observability", "observability_router", "/v1"),
+    ("aegis.api.routes.integrations", "integrations_router", "/v1"),
+    ("aegis.api.routes.llm", "llm_router", "/v1"),
+    ("aegis.api.routes.rag", "rag_router", "/v1"),
+    ("aegis.api.routes.security", "security_router", "/v1"),
+    ("aegis.api.routes.ml", "ml_router", "/v1"),
+    ("aegis.integrations.cds_hooks", "cds_hooks_router", ""),  # Root level
+    ("aegis.integrations.epic_smart", "epic_smart_router", "/v1"),
+    ("aegis.events.kafka_consumer", "events_router", "/v1"),
+    ("aegis.clinical.sdoh", "sdoh_router", "/v1"),
+    ("aegis.clinical.symptoms", "symptoms_router", "/v1"),
+    ("aegis.notifications.webhooks", "notifications_router", "/v1"),
+]
+
+for module_path, router_name, prefix in optional_routers:
+    try:
+        module = __import__(module_path, fromlist=[router_name])
+        router = getattr(module, router_name)
+        if prefix:
+            app.include_router(router, prefix=prefix)
+        else:
+            app.include_router(router)
+    except (ImportError, AttributeError) as e:
+        logger.debug(f"Router {module_path}.{router_name} not available: {e}")
 
 # Bridge Apps
 try:
@@ -353,31 +373,12 @@ try:
 except (ImportError, AttributeError) as e:
     logger.warning(f"Oncolife bridge app not available: {e}")
 
-# V1 API routes
-app.include_router(auth_router, prefix="/v1")
-app.include_router(ingestion_router, prefix="/v1")
-app.include_router(patients_router, prefix="/v1")
-app.include_router(claims_router, prefix="/v1")
-app.include_router(agents_router, prefix="/v1")
-app.include_router(denials_router, prefix="/v1")
-app.include_router(workflows_router, prefix="/v1")
-app.include_router(orchestrator_router, prefix="/v1")
-app.include_router(observability_router, prefix="/v1")
-app.include_router(integrations_router, prefix="/v1")
-app.include_router(llm_router, prefix="/v1")
-app.include_router(rag_router, prefix="/v1")
-app.include_router(security_router, prefix="/v1")
-app.include_router(ml_router, prefix="/v1")
-app.include_router(cds_hooks_router)  # CDS Hooks at root level per spec
-app.include_router(epic_smart_router, prefix="/v1")
-app.include_router(events_router, prefix="/v1")
-app.include_router(sdoh_router, prefix="/v1")
-app.include_router(symptoms_router, prefix="/v1")
-app.include_router(notifications_router, prefix="/v1")
-
 # GraphQL prototype mount (strawberry)
-from aegis.api.routes.graphql import graphql_app
-app.mount("/v1/graphql", graphql_app)
+try:
+    from aegis.api.routes.graphql import graphql_app
+    app.mount("/v1/graphql", graphql_app)
+except (ImportError, AttributeError) as e:
+    logger.debug(f"GraphQL app not available: {e}")
 
 
 if __name__ == "__main__":
