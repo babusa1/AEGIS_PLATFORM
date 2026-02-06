@@ -255,6 +255,7 @@ class ApprovalManager:
         request_data: dict | None = None,
         context: dict | None = None,
         priority: ApprovalPriority = ApprovalPriority.MEDIUM,
+        tier: str = ApprovalTier.TIER_2_ASSISTED,
         assigned_to: list[str] | None = None,
         assigned_roles: list[str] | None = None,
         timeout_minutes: int | None = None,
@@ -272,13 +273,14 @@ class ApprovalManager:
             request_data: Data being approved
             context: Additional context
             priority: Request priority
+            tier: Approval tier (TIER_1_AUTOMATED, TIER_2_ASSISTED, TIER_3_CLINICAL)
             assigned_to: User IDs who can approve
             assigned_roles: Roles who can approve
             timeout_minutes: Custom timeout
             tenant_id: Tenant ID
         
         Returns:
-            ApprovalRequest
+            ApprovalRequest (auto-approved if Tier 1)
         """
         request_id = str(uuid.uuid4())
         now = datetime.now(timezone.utc)
@@ -293,6 +295,7 @@ class ApprovalManager:
             title=title,
             description=description,
             priority=priority,
+            tier=tier,
             request_data=request_data or {},
             context=context or {},
             assigned_to=assigned_to or [],
@@ -304,15 +307,49 @@ class ApprovalManager:
         
         self._requests[request_id] = request
         
+        # Policy-based auto-approval for Tier 1 (Automated)
+        if tier == ApprovalTier.TIER_1_AUTOMATED:
+            policy = self._get_policy_for_request(request)
+            if policy and policy.auto_approve_conditions:
+                # Check if conditions are met for auto-approval
+                conditions_met = True
+                for key, value in policy.auto_approve_conditions.items():
+                    if key in request.request_data:
+                        if request.request_data[key] != value:
+                            conditions_met = False
+                            break
+                    elif key in request.context:
+                        if request.context[key] != value:
+                            conditions_met = False
+                            break
+                    else:
+                        conditions_met = False
+                        break
+                
+                if conditions_met:
+                    # Auto-approve Tier 1 requests
+                    await self.approve(
+                        request_id,
+                        approver="system",
+                        comment="Auto-approved: Tier 1 (Automated) - conditions met",
+                    )
+                    logger.info(
+                        "Tier 1 request auto-approved",
+                        request_id=request_id,
+                        execution_id=execution_id,
+                    )
+                    return request
+        
         logger.info(
             "Approval request created",
             request_id=request_id,
             execution_id=execution_id,
             title=title,
+            tier=tier,
         )
         
-        # Send notification
-        if self.notification_callback:
+        # Send notification (only for Tier 2/3)
+        if tier != ApprovalTier.TIER_1_AUTOMATED and self.notification_callback:
             try:
                 await self.notification_callback(request)
                 request.notification_sent = True

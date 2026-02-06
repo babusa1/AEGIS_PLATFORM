@@ -278,10 +278,10 @@ async def health_check(request: Request):
         "critical_services_down": critical_down,
     }
     
-        return JSONResponse(
-            content=response,
-            status_code=status_code
-        )
+    return JSONResponse(
+        content=response,
+        status_code=status_code
+    )
 
 
 @app.get("/health/ready", tags=["Health"])

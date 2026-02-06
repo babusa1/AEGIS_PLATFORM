@@ -12,14 +12,14 @@
 
 | Component | Status | % Complete |
 |-----------|--------|------------|
-| **Data Moat (Pillar 1)** | ✅ | 85% |
+| **Data Moat (Pillar 1)** | ✅ | 95% |
 | **Agentic Framework (Pillar 2)** | ✅ | 90% |
 | **Clinical RAG (Pillar 3)** | ✅ | 85% |
 | **Bridge Apps (Pillar 4)** | ✅ | 100% |
-| **HITL & Governance (Pillar 5)** | 🟡 | 70% |
+| **HITL & Governance (Pillar 5)** | ✅ | 90% |
 | **Production Ready** | ✅ | 75% |
 
-**Overall Platform**: ~85% Complete
+**Overall Platform**: ~90% Complete
 
 ---
 
@@ -34,18 +34,18 @@
 - [x] Graph schema defined (`ontology/gremlin_schema/schema.groovy`)
 - [x] FHIR-to-Graph transformer (`packages/aegis-connectors/src/aegis_connectors/fhir/transformer.py`)
 
-**B. Semantic: Medical Rosetta Stone** 🟡
+**B. Semantic: Medical Rosetta Stone** ✅
 - [x] Terminology service (LOINC, SNOMED-CT, ICD-10, RxNorm)
 - [x] Multi-stage mapping pipeline (`src/aegis/integrations/terminology.py`)
-- [ ] **Gap**: LLM-enriched fuzzy matching for local lab codes
-- [ ] **Gap**: Expert-in-the-loop feedback system for mapping verification
+- [x] LLM-enriched fuzzy matching (`src/aegis/ingestion/normalization.py`)
+- [x] Expert-in-the-loop feedback system (`src/aegis/knowledge/mapping_feedback.py`)
 - [x] Entity resolution (MPI integration completed in P1)
 
-**C. Temporal: Longitudinal Patient Story** 🟡
+**C. Temporal: Longitudinal Patient Story** ✅
 - [x] Patient timeline support
 - [x] Event-driven architecture (Kafka)
-- [ ] **Gap**: Vectorized timelines with Time_Offset from initial diagnosis
-- [ ] **Gap**: Pattern matching queries (e.g., "20% eGFR drop within 3 months")
+- [x] Vectorized timelines with Time_Offset (`src/aegis/digital_twin/timeline.py`)
+- [x] Pattern matching queries (`src/aegis/query/temporal_patterns.py`)
 
 ---
 
@@ -117,22 +117,23 @@
 
 ### Pillar 5: Human-in-the-Loop (HITL) & Governance
 
-**A. Three-Tier Approval Workflow** 🟡
+**A. Three-Tier Approval Workflow** ✅
 - [x] Approval system (`src/aegis/orchestrator/approval.py`)
 - [x] Approval gates (`src/aegis/orchestrator/core/agents.py`)
-- [ ] **Gap**: Explicit Tier 1/2/3 categorization
-- [ ] **Gap**: Automated vs Assisted vs Clinical risk tiers
+- [x] Explicit Tier 1/2/3 categorization (`ApprovalTier` enum)
+- [x] Policy-based auto-approval for Tier 1 (Automated)
+- [x] Tier-specific handling (Tier 2 Assisted, Tier 3 Clinical)
 
-**B. Explainability: The "Why" Engine** 🟡
+**B. Explainability: The "Why" Engine** ✅
 - [x] Agent reasoning logs
 - [x] Evidence tracking
-- [ ] **Gap**: Reasoning_Path nodes in graph
-- [ ] **Gap**: Structured evidence links to FHIR nodes
+- [x] Reasoning_Path nodes in graph (`src/aegis/graph/reasoning.py`)
+- [x] Structured evidence links to FHIR nodes (HAS_EVIDENCE edges)
 
-**C. Kill Switch & Data Sovereignty** 🔴
+**C. Kill Switch & Data Sovereignty** 🟡
 - [x] Audit logs (`src/aegis/security/audit.py`)
-- [ ] **Gap**: Guardian Override (pause specific agent types)
-- [ ] **Gap**: Immutable audit log storage
+- [x] Guardian Override (`src/aegis/orchestrator/kill_switch.py`)
+- [ ] **Gap**: Immutable audit log storage (append-only, P1)
 
 ---
 
@@ -153,67 +154,68 @@
 
 ---
 
-## 🔴 CRITICAL GAPS (P0 - Must Fix)
+## ✅ P0 CRITICAL GAPS - COMPLETED
 
-### 1. Semantic Normalization: LLM-Enriched Mapping
-**Problem**: Terminology mapping exists but lacks LLM-powered fuzzy matching  
-**Impact**: Can't map local lab codes (e.g., "HgbA1c-lab-01") to LOINC automatically  
-**Fix**:
-- [ ] Add medical-BERT/SLM ensemble for fuzzy matching
-- [ ] Implement local code → LOINC/SNOMED mapping pipeline
-- [ ] Add confidence scoring for mappings
+### 1. Semantic Normalization: LLM-Enriched Mapping ✅
+**Status**: ✅ COMPLETE  
+**Implementation**: 
+- ✅ `LLMCodeMapper` class with LLM-powered fuzzy matching (`src/aegis/ingestion/normalization.py`)
+- ✅ Multi-stage pipeline: Knowledge Base → Exact Match → LLM Fuzzy Matching
+- ✅ Confidence scoring for mappings
+- ✅ Batch mapping support
 
-**Files**: `src/aegis/integrations/terminology.py`, `src/aegis/ingestion/normalization.py` (new)
+**Files**: `src/aegis/ingestion/normalization.py` ✅
 
-### 2. Expert-in-the-Loop Feedback System
-**Problem**: No way for clinicians to verify mappings once  
-**Impact**: Can't build permanent Knowledge Base assets from expert feedback  
-**Fix**:
-- [ ] Create mapping verification UI/API
-- [ ] Store verified mappings in Knowledge Base
-- [ ] Use verified mappings to improve future matching
+### 2. Expert-in-the-Loop Feedback System ✅
+**Status**: ✅ COMPLETE  
+**Implementation**:
+- ✅ `MappingKnowledgeBase` class for storing verified mappings (`src/aegis/knowledge/mapping_feedback.py`)
+- ✅ `verify_mapping` method stores expert-verified mappings
+- ✅ `get_verified_mapping` retrieves verified mappings (checked first in pipeline)
+- ✅ PostgreSQL persistence with in-memory cache
 
-**New File**: `src/aegis/knowledge/mapping_feedback.py`
+**Files**: `src/aegis/knowledge/mapping_feedback.py` ✅
 
-### 3. Vectorized Timelines with Time_Offset
-**Problem**: Patient timelines exist but not vectorized with temporal offsets  
-**Impact**: Can't search for patterns like "20% eGFR drop within 3 months"  
-**Fix**:
-- [ ] Add Time_Offset calculation from initial diagnosis
-- [ ] Vectorize events with temporal context
-- [ ] Implement temporal pattern matching queries
+### 3. Vectorized Timelines with Time_Offset ✅
+**Status**: ✅ COMPLETE  
+**Implementation**:
+- ✅ `VectorizedTimeline` class with `time_offset_days` and `time_offset_months` (`src/aegis/digital_twin/timeline.py`)
+- ✅ Time_Offset calculation from initial diagnosis
+- ✅ Event vectorization with temporal context
+- ✅ `find_pattern` method for temporal pattern matching (e.g., eGFR drops)
 
-**Files**: `src/aegis/digital_twin/timeline.py` (enhance), `src/aegis/rag/retriever.py`
+**Files**: `src/aegis/digital_twin/timeline.py` ✅
 
-### 4. Three-Tier Approval Workflow Enhancement
-**Problem**: Approval system exists but lacks explicit tier categorization  
-**Impact**: Can't distinguish automated vs assisted vs clinical actions  
-**Fix**:
-- [ ] Add Tier 1/2/3 categorization to approval requests
-- [ ] Implement policy-based auto-approval for Tier 1
-- [ ] Add tier-specific UI/UX
+### 4. Three-Tier Approval Workflow Enhancement ✅
+**Status**: ✅ COMPLETE  
+**Implementation**:
+- ✅ `ApprovalTier` enum with `TIER_1_AUTOMATED`, `TIER_2_ASSISTED`, `TIER_3_CLINICAL` (`src/aegis/orchestrator/models.py`)
+- ✅ `tier` field in `ApprovalRequest` model
+- ✅ Policy-based auto-approval for Tier 1 in `request_approval` method
+- ✅ Tier-specific handling (no notifications for Tier 1)
 
-**Files**: `src/aegis/orchestrator/approval.py`, `src/aegis/orchestrator/models.py`
+**Files**: `src/aegis/orchestrator/approval.py`, `src/aegis/orchestrator/models.py` ✅
 
-### 5. Reasoning_Path Nodes in Graph
-**Problem**: Agent reasoning logged but not stored as graph nodes  
-**Impact**: Can't query "Why did agent recommend X?" from graph  
-**Fix**:
-- [ ] Create Reasoning_Path vertex type
-- [ ] Link recommendations to evidence nodes
-- [ ] Store reasoning chains in graph
+### 5. Reasoning_Path Nodes in Graph ✅
+**Status**: ✅ COMPLETE  
+**Implementation**:
+- ✅ `ReasoningPathManager` class (`src/aegis/graph/reasoning.py`)
+- ✅ `create_reasoning_path` creates Reasoning_Path vertex type in graph
+- ✅ Links recommendations to evidence nodes via HAS_EVIDENCE edges
+- ✅ Stores reasoning chains with steps, evidence, conflicts
 
-**Files**: `src/aegis/graph/schema.py`, `src/aegis/agents/base.py`
+**Files**: `src/aegis/graph/reasoning.py` ✅
 
-### 6. Kill Switch (Guardian Override)
-**Problem**: No way to pause specific agent types during downtime  
-**Impact**: Can't prevent agent actions during EHR maintenance  
-**Fix**:
-- [ ] Add agent type pause/resume API
-- [ ] Implement pause state in orchestrator
-- [ ] Add admin UI for kill switch
+### 6. Kill Switch (Guardian Override) ✅
+**Status**: ✅ COMPLETE  
+**Implementation**:
+- ✅ `KillSwitchManager` class (`src/aegis/orchestrator/kill_switch.py`)
+- ✅ `pause_agent` and `resume_agent` methods (per type or all)
+- ✅ `is_agent_active` check integrated in `BaseAgent.run` method
+- ✅ Audit logging of all pause/resume actions
+- ✅ Scheduled auto-resume support
 
-**Files**: `src/aegis/orchestrator/engine.py`, `src/aegis/api/routes/admin.py` (new)
+**Files**: `src/aegis/orchestrator/kill_switch.py`, `src/aegis/agents/base.py` ✅
 
 ---
 
@@ -239,13 +241,13 @@
 
 ## 📋 TODO ITEMS (Prioritized)
 
-### This Week (P0 - Critical Gaps)
-1. [ ] **Semantic Normalization**: LLM-enriched fuzzy matching
-2. [ ] **Expert Feedback**: Mapping verification system
-3. [ ] **Vectorized Timelines**: Time_Offset calculation
-4. [ ] **Three-Tier Approval**: Explicit tier categorization
-5. [ ] **Reasoning_Path**: Graph nodes for explainability
-6. [ ] **Kill Switch**: Agent pause/resume functionality
+### This Week (P0 - Critical Gaps) ✅ ALL COMPLETED
+1. [x] **Semantic Normalization**: LLM-enriched fuzzy matching ✅
+2. [x] **Expert Feedback**: Mapping verification system ✅
+3. [x] **Vectorized Timelines**: Time_Offset calculation ✅
+4. [x] **Three-Tier Approval**: Explicit tier categorization + auto-approval ✅
+5. [x] **Reasoning_Path**: Graph nodes for explainability ✅
+6. [x] **Kill Switch**: Agent pause/resume functionality ✅
 
 ### This Month (P1)
 7. [x] **Pattern Matching**: Temporal pattern queries ✅
@@ -312,9 +314,10 @@
 ### HITL & Governance (Pillar 5)
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Three-Tier Approval | 🟡 Partial | Approval system exists, needs tier categorization |
-| Explainability | 🟡 Partial | Logging exists, needs Reasoning_Path nodes |
-| Kill Switch | 🔴 Missing | No agent pause/resume functionality |
+| Three-Tier Approval | ✅ Complete | Tier categorization + auto-approval implemented |
+| Explainability | ✅ Complete | Reasoning_Path nodes with evidence links |
+| Kill Switch | ✅ Complete | Agent pause/resume with audit logging |
+| Immutable Audit Logs | 🟡 Partial | Audit logging exists, needs append-only storage (P1) |
 
 ---
 
