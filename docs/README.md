@@ -4,6 +4,26 @@
 
 AEGIS (Agentic Engine for Graph-Integrated Systems) is the healthcare data platform that unifies clinical, financial, and operational data into a single knowledge graph, powered by AI agents.
 
+## 📚 Documentation Structure
+
+### 🎯 Master Documents (Read First)
+- **[`MASTER_PLAN.md`](./MASTER_PLAN.md)** ← **START HERE** - Single source of truth, current status, next steps
+- [`PLATFORM_OVERVIEW.md`](./PLATFORM_OVERVIEW.md) - One-page platform architecture overview
+- [`LOCAL_TESTING.md`](./LOCAL_TESTING.md) - Step-by-step local testing guide
+
+### 📊 Status & Planning
+- [`COVERAGE_ANALYSIS.md`](./COVERAGE_ANALYSIS.md) - Detailed blueprint coverage analysis
+- [`PLATFORM_ANGLE_REVIEW.md`](./PLATFORM_ANGLE_REVIEW.md) - Platform-first review (Data Moat → Agents)
+- [`STATUS_REVIEW.md`](./STATUS_REVIEW.md) - Phase-by-phase implementation status
+- [`ACTION_PLAN.md`](./ACTION_PLAN.md) - Week-by-week action plan
+- [`QUICK_STATUS.md`](./QUICK_STATUS.md) - Quick reference checklist
+
+### 🏗️ Architecture & Vision
+- [`PLATFORM_VISION.md`](./PLATFORM_VISION.md) - Product vision and roadmap
+- [`ORCHESTRATION_ENGINE_SPEC.md`](./ORCHESTRATION_ENGINE_SPEC.md) - Technical specification
+- [`ROADMAP.md`](./ROADMAP.md) - Long-term roadmap
+- [`AEGIS_VS_N8N_KOGO.md`](./AEGIS_VS_N8N_KOGO.md) - Competitor comparison
+
 ## Documentation Structure
 
 ```
