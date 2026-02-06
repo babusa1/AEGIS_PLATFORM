@@ -30,7 +30,7 @@ except ImportError:
 try:
     from .symptom_checker import SymptomCheckerService
     from .api import router as oncolife_router
-except ImportError:
+except (ImportError, AttributeError, TypeError) as e:
     SymptomCheckerService = None
     oncolife_router = None
 

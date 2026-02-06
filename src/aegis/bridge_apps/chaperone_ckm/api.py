@@ -42,7 +42,13 @@ except (ImportError, AttributeError, TypeError) as e:
     ChaperoneCKMService = None
 
 # Create router unconditionally - it's safe even if dependencies are missing
-router = APIRouter(prefix="/bridge/chaperone-ckm", tags=["chaperone-ckm"])
+# Wrap in try-except to ensure router is always created, even if there are import issues
+try:
+    router = APIRouter(prefix="/bridge/chaperone-ckm", tags=["chaperone-ckm"])
+except Exception as e:
+    logger.error(f"Failed to create CKM router: {e}")
+    # Create a minimal router as fallback
+    router = APIRouter(prefix="/bridge/chaperone-ckm", tags=["chaperone-ckm"])
 
 
 # Request/Response Models
