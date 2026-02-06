@@ -129,11 +129,22 @@ class UnifiedIngestionPipeline:
         graph_client: Optional[Any] = None,
         kafka_producer: Optional[Any] = None,
         validator: Optional[Any] = None,
+        mpi_matcher: Optional[Any] = None,
     ):
         self.db_pool = db_pool
         self.graph_client = graph_client
         self.kafka_producer = kafka_producer
         self.validator = validator
+        
+        # MPI (Master Patient Index) matcher for patient identity resolution
+        self.mpi_matcher = mpi_matcher
+        if not self.mpi_matcher:
+            try:
+                from aegis_mpi.matcher import PatientMatcher
+                self.mpi_matcher = PatientMatcher()
+                logger.info("MPI matcher initialized")
+            except ImportError:
+                logger.warning("MPI matcher not available - patient matching disabled")
         
         # Connector registry - maps source_type to connector class
         self._connectors: Dict[str, Any] = {}
@@ -216,7 +227,11 @@ class UnifiedIngestionPipeline:
                 logger.error("Parse failed", error=str(e), source_type=source_type)
                 return result
             
-            # Step 3: Validate (if validator available)
+            # Step 3: Patient Matching (MPI) - if patient data present
+            if self.mpi_matcher and isinstance(parsed, dict):
+                parsed = await self._apply_mpi_matching(parsed, tenant_id, source_system)
+            
+            # Step 4: Validate (if validator available)
             if self.validator and isinstance(parsed, dict):
                 validated_entities = []
                 for entity in parsed.get("entities", []):
@@ -229,7 +244,7 @@ class UnifiedIngestionPipeline:
                 
                 parsed["entities"] = validated_entities
             
-            # Step 4: Write to Data Moat (PostgreSQL)
+            # Step 5: Write to Data Moat (PostgreSQL)
             if self.db_pool and isinstance(parsed, dict):
                 written = await self._write_to_postgres(
                     parsed,
@@ -240,15 +255,15 @@ class UnifiedIngestionPipeline:
                 result.records_written = written
                 result.entity_types_created = self._count_entity_types(parsed)
             
-            # Step 5: Write to Graph (if available)
+            # Step 6: Write to Graph (if available)
             if self.graph_client and isinstance(parsed, dict):
                 await self._write_to_graph(parsed, tenant_id)
             
-            # Step 6: Publish to Kafka (if available)
+            # Step 7: Publish to Kafka (if available)
             if self.kafka_producer and isinstance(parsed, dict):
                 await self._publish_to_kafka(parsed, source_type, tenant_id)
             
-            # Step 7: Index in RAG (if requested)
+            # Step 8: Index in RAG (if requested)
             if index_in_rag and isinstance(parsed, dict):
                 await self._index_in_rag(parsed, tenant_id)
             

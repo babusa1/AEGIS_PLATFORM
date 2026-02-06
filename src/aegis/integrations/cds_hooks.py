@@ -1,15 +1,22 @@
 """
-Epic CDS Hooks Integration
+Epic CDS Hooks Integration (Enhanced)
 
 Implements HL7 CDS Hooks 2.0 specification for real-time clinical decision support
 within Epic and other EHR systems.
 
 Hooks supported:
-- patient-view: When patient chart is opened
-- order-select: When orders are being selected
-- order-sign: Before orders are signed
-- encounter-start: When encounter begins
-- encounter-discharge: At discharge
+- patient-view: When patient chart is opened (enhanced with AEGIS agents)
+- order-select: When orders are being selected (enhanced with denial prediction)
+- order-sign: Before orders are signed (enhanced with prior auth checks)
+- encounter-start: When encounter begins (enhanced with care gap analysis)
+- encounter-discharge: At discharge (enhanced with readmission risk)
+
+Features:
+- Real-time agent execution (Oncolife, Chaperone CKM, Triage)
+- Care gap identification
+- Denial risk prediction
+- Readmission risk scoring
+- Medication interaction checks
 
 Reference: https://cds-hooks.hl7.org/
 """
@@ -193,9 +200,10 @@ class CDSHooksService:
     Processes incoming hook requests and returns clinical decision support cards.
     """
     
-    def __init__(self, pool=None, ml_predictor=None):
+    def __init__(self, pool=None, ml_predictor=None, agent_registry=None):
         self.pool = pool
         self.ml_predictor = ml_predictor
+        self.agent_registry = agent_registry  # Registry of AEGIS agents (Oncolife, Chaperone CKM, etc.)
         
         # AEGIS source info
         self.source = CDSSource(
@@ -244,7 +252,14 @@ class CDSHooksService:
             ])
     
     async def _handle_patient_view(self, request: CDSRequest) -> CDSResponse:
-        """Handle patient-view hook - show risk assessment when chart opens."""
+        """
+        Handle patient-view hook - show risk assessment when chart opens.
+        
+        Enhanced with AEGIS agents:
+        - OncolifeAgent for oncology patients
+        - ChaperoneCKMAgent for CKD patients
+        - TriageAgent for general risk assessment
+        """
         cards = []
         prefetch = request.prefetch or CDSPrefetch()
         
@@ -253,6 +268,16 @@ class CDSHooksService:
         conditions = self._extract_bundle_entries(prefetch.conditions)
         medications = self._extract_bundle_entries(prefetch.medications)
         observations = self._extract_bundle_entries(prefetch.observations)
+        
+        # Run AEGIS agents if available
+        agent_cards = await self._run_therapeutic_agents(
+            request.context.patientId,
+            patient,
+            conditions,
+            medications,
+            observations,
+        )
+        cards.extend(agent_cards)
         
         # Calculate risk score
         risk_score, risk_level, risk_factors = self._calculate_risk(

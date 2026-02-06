@@ -28,6 +28,9 @@ class AegisSettings(BaseSettings):
     log_level: str = "INFO"
     secret_key: SecretStr = Field(default=SecretStr("dev-secret-key-change-me"))
     
+    # Mock Mode - explicit flag to allow mocks (default: True in dev, False in prod)
+    mock_mode: bool = Field(default=True, description="Allow mock clients when real services unavailable")
+    
     # API
     api_host: str = "0.0.0.0"
     api_port: int = 8000

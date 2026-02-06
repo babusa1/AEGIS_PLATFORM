@@ -220,6 +220,29 @@ class BaseAgent(ABC):
         """
         Run the agent with the given query.
         
+        Checks kill switch before execution.
+        """
+        # Check kill switch
+        from aegis.orchestrator.kill_switch import get_kill_switch
+        kill_switch = get_kill_switch()
+        
+        if not kill_switch.is_agent_active(self.name):
+            logger.warning(
+                f"Agent {self.name} is paused - execution blocked",
+                tenant_id=tenant_id,
+                user_id=user_id,
+            )
+            return {
+                "answer": None,
+                "reasoning": [],
+                "confidence": 0.0,
+                "tool_calls": [],
+                "iterations": 0,
+                "error": f"Agent {self.name} is currently paused. Please contact administrator.",
+            }
+        """
+        Run the agent with the given query.
+        
         Args:
             query: User query or instruction
             tenant_id: Tenant ID for data scoping
@@ -253,8 +276,17 @@ class BaseAgent(ABC):
             # Run the graph
             final_state = await self.compiled_graph.ainvoke(initial_state, config)
             
+            # Redact PHI from agent outputs
+            answer = final_state.get("final_answer")
+            if answer:
+                try:
+                    from aegis.security.phi_detection import redact_phi
+                    answer = redact_phi(str(answer))
+                except Exception:
+                    pass  # If redaction fails, return original
+            
             return {
-                "answer": final_state.get("final_answer"),
+                "answer": answer,
                 "reasoning": final_state.get("reasoning", []),
                 "confidence": final_state.get("confidence", 0.0),
                 "tool_calls": final_state.get("tool_calls", []),
@@ -263,14 +295,22 @@ class BaseAgent(ABC):
             }
             
         except Exception as e:
-            logger.error(f"Agent {self.name} failed", error=str(e))
+            error_msg = str(e)
+            # Redact PHI from error messages too
+            try:
+                from aegis.security.phi_detection import redact_phi
+                error_msg = redact_phi(error_msg)
+            except Exception:
+                pass
+            
+            logger.error(f"Agent {self.name} failed", error=error_msg)
             return {
                 "answer": None,
                 "reasoning": [],
                 "confidence": 0.0,
                 "tool_calls": [],
                 "iterations": 0,
-                "error": str(e),
+                "error": error_msg,
             }
 
 

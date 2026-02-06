@@ -10,7 +10,7 @@ Complete end-to-end RAG pipeline:
 6. Generation (with citations)
 """
 
-from typing import Any, Dict, List, Optional, BinaryIO
+from typing import Any, Dict, List, Optional, Optional, BinaryIO
 from datetime import datetime
 from pathlib import Path
 import asyncio
@@ -112,11 +112,12 @@ class RAGPipeline:
         # Initialize chunker
         self.chunker = self._create_chunker()
         
-        # Initialize retriever
+        # Initialize retriever (graph client will be set lazily if needed for GraphRAG)
         self.retriever = RAGRetriever(
             vector_store=self.vector_store,
             embedding_model=self.embedding_model,
             llm_client=llm_client,
+            graph_client=None,  # Set lazily when GraphRAG is used
         )
     
     def _create_chunker(self) -> Chunker:
@@ -362,15 +363,40 @@ class RAGPipeline:
         query: str,
         top_k: int = None,
         filters: Dict[str, Any] = None,
+        use_graphrag: bool = False,
+        graph_entity_id: Optional[str] = None,
+        temporal_priority: bool = False,
+        time_window_days: Optional[int] = None,
     ) -> RAGResponse:
-        """Retrieve relevant documents for a query."""
+        """
+        Retrieve relevant documents for a query.
+        
+        Args:
+            query: User query
+            top_k: Number of results
+            filters: Metadata filters
+            use_graphrag: Enable GraphRAG (graph traversal + RAG)
+            graph_entity_id: Starting entity ID for graph traversal
+        """
+        # Lazy-load graph client if GraphRAG is requested
+        if use_graphrag and not self.retriever.graph_client:
+            try:
+                from aegis.graph.client import get_graph_client
+                self.retriever.graph_client = await get_graph_client()
+            except Exception:
+                logger.warning("Graph client not available for GraphRAG")
+        
         return await self.retriever.retrieve(
             query=query,
             top_k=top_k or self.config.top_k,
-            search_type=self.config.search_type,
+            search_type="graphrag" if use_graphrag else self.config.search_type,
             filters=filters,
             expand_queries=self.config.expand_queries,
             rerank=self.config.rerank,
+            use_graphrag=use_graphrag,
+            graph_entity_id=graph_entity_id,
+            temporal_priority=temporal_priority,
+            time_window_days=time_window_days,
         )
     
     # =========================================================================

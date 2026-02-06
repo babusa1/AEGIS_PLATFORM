@@ -23,6 +23,19 @@ class ApprovalStatus(str, Enum):
     ESCALATED = "escalated"
 
 
+class ApprovalTier(str, Enum):
+    """
+    Three-Tier Approval Workflow.
+    
+    Tier 1 (Automated): Non-clinical administrative tasks - no human sign-off needed
+    Tier 2 (Assisted): Documentation and communication - agent drafts, human reviews
+    Tier 3 (Clinical/High-Risk): Orders and triaging - agent provides rationale, requires approval
+    """
+    TIER_1_AUTOMATED = "tier_1_automated"  # No approval needed
+    TIER_2_ASSISTED = "tier_2_assisted"  # Human review required
+    TIER_3_CLINICAL = "tier_3_clinical"  # Explicit approval required
+
+
 class ApprovalPriority(str, Enum):
     """Priority levels for approval requests."""
     LOW = "low"
@@ -42,6 +55,7 @@ class ApprovalRequest:
     description: str
     status: ApprovalStatus = ApprovalStatus.PENDING
     priority: ApprovalPriority = ApprovalPriority.MEDIUM
+    tier: str = "tier_2_assisted"  # Three-tier: tier_1_automated, tier_2_assisted, tier_3_clinical
     
     # Request details
     request_data: dict[str, Any] = field(default_factory=dict)

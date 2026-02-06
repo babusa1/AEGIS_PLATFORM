@@ -37,6 +37,8 @@ class DatabaseClients:
 
 async def init_postgres(settings) -> Any:
     """Initialize PostgreSQL connection pool."""
+    mock_mode = settings.app.mock_mode
+    
     try:
         import asyncpg
         
@@ -57,15 +59,22 @@ async def init_postgres(settings) -> Any:
         
         return pool
     except ImportError:
-        logger.warning("asyncpg not installed, using mock postgres client")
+        if not mock_mode:
+            raise RuntimeError("asyncpg not installed and MOCK_MODE=false - cannot proceed")
+        logger.warning("asyncpg not installed, using mock postgres client (MOCK_MODE=true)")
         return MockPostgres()
     except Exception as e:
-        logger.error("PostgreSQL connection failed", error=str(e))
+        if not mock_mode:
+            logger.error("PostgreSQL connection failed and MOCK_MODE=false - failing fast", error=str(e))
+            raise RuntimeError(f"PostgreSQL connection failed: {str(e)}") from e
+        logger.warning("PostgreSQL connection failed, using mock client (MOCK_MODE=true)", error=str(e))
         return MockPostgres()
 
 
 async def init_graph(settings) -> Any:
     """Initialize JanusGraph/Neptune Gremlin client."""
+    mock_mode = settings.app.mock_mode
+    
     try:
         from gremlin_python.driver.driver_remote_connection import DriverRemoteConnection
         from gremlin_python.process.anonymous_traversal import traversal
@@ -82,15 +91,22 @@ async def init_graph(settings) -> Any:
         
         return {"connection": connection, "g": g}
     except ImportError:
-        logger.warning("gremlinpython not available, using mock graph client")
+        if not mock_mode:
+            raise RuntimeError("gremlinpython not available and MOCK_MODE=false - cannot proceed")
+        logger.warning("gremlinpython not available, using mock graph client (MOCK_MODE=true)")
         return MockGraph()
     except Exception as e:
-        logger.warning("JanusGraph connection failed, using mock", error=str(e))
+        if not mock_mode:
+            logger.error("JanusGraph connection failed and MOCK_MODE=false - failing fast", error=str(e))
+            raise RuntimeError(f"JanusGraph connection failed: {str(e)}") from e
+        logger.warning("JanusGraph connection failed, using mock (MOCK_MODE=true)", error=str(e))
         return MockGraph()
 
 
 async def init_opensearch(settings) -> Any:
     """Initialize OpenSearch client."""
+    mock_mode = settings.app.mock_mode
+    
     try:
         from opensearchpy import AsyncOpenSearch
         
@@ -107,15 +123,22 @@ async def init_opensearch(settings) -> Any:
         
         return client
     except ImportError:
-        logger.warning("opensearch-py not installed, using mock client")
+        if not mock_mode:
+            raise RuntimeError("opensearch-py not installed and MOCK_MODE=false - cannot proceed")
+        logger.warning("opensearch-py not installed, using mock client (MOCK_MODE=true)")
         return MockOpenSearch()
     except Exception as e:
-        logger.warning("OpenSearch connection failed, using mock", error=str(e))
+        if not mock_mode:
+            logger.error("OpenSearch connection failed and MOCK_MODE=false - failing fast", error=str(e))
+            raise RuntimeError(f"OpenSearch connection failed: {str(e)}") from e
+        logger.warning("OpenSearch connection failed, using mock (MOCK_MODE=true)", error=str(e))
         return MockOpenSearch()
 
 
 async def init_redis(settings) -> Any:
     """Initialize Redis client."""
+    mock_mode = settings.app.mock_mode
+    
     try:
         import redis.asyncio as redis
         
@@ -127,15 +150,22 @@ async def init_redis(settings) -> Any:
         
         return client
     except ImportError:
-        logger.warning("redis not installed, using mock client")
+        if not mock_mode:
+            raise RuntimeError("redis not installed and MOCK_MODE=false - cannot proceed")
+        logger.warning("redis not installed, using mock client (MOCK_MODE=true)")
         return MockRedis()
     except Exception as e:
-        logger.warning("Redis connection failed, using mock", error=str(e))
+        if not mock_mode:
+            logger.error("Redis connection failed and MOCK_MODE=false - failing fast", error=str(e))
+            raise RuntimeError(f"Redis connection failed: {str(e)}") from e
+        logger.warning("Redis connection failed, using mock (MOCK_MODE=true)", error=str(e))
         return MockRedis()
 
 
 async def init_dynamodb(settings) -> Any:
     """Initialize DynamoDB client."""
+    mock_mode = settings.app.mock_mode
+    
     try:
         from aegis.db.dynamodb import DynamoDBClient, MockDynamoDBClient
         
@@ -153,19 +183,26 @@ async def init_dynamodb(settings) -> Any:
                 return client
         
         # Fall back to mock
-        logger.warning("Using mock DynamoDB client")
+        if not mock_mode:
+            raise RuntimeError("DynamoDB not connected and MOCK_MODE=false - cannot proceed")
+        logger.warning("Using mock DynamoDB client (MOCK_MODE=true)")
         mock_client = MockDynamoDBClient()
         await mock_client.connect()
         return mock_client
         
     except ImportError:
-        logger.warning("DynamoDB dependencies not installed, using mock client")
+        if not mock_mode:
+            raise RuntimeError("DynamoDB dependencies not installed and MOCK_MODE=false - cannot proceed")
+        logger.warning("DynamoDB dependencies not installed, using mock client (MOCK_MODE=true)")
         from aegis.db.dynamodb import MockDynamoDBClient
         mock_client = MockDynamoDBClient()
         await mock_client.connect()
         return mock_client
     except Exception as e:
-        logger.warning("DynamoDB connection failed, using mock", error=str(e))
+        if not mock_mode and not isinstance(e, RuntimeError):
+            logger.error("DynamoDB connection failed and MOCK_MODE=false - failing fast", error=str(e))
+            raise RuntimeError(f"DynamoDB connection failed: {str(e)}") from e
+        logger.warning("DynamoDB connection failed, using mock (MOCK_MODE=true)", error=str(e))
         from aegis.db.dynamodb import MockDynamoDBClient
         mock_client = MockDynamoDBClient()
         await mock_client.connect()
@@ -180,7 +217,8 @@ async def init_db_clients(settings) -> DatabaseClients:
     """
     global _clients
     
-    logger.info("Initializing database connections...")
+    mock_mode = settings.app.mock_mode
+    logger.info("Initializing database connections...", mock_mode=mock_mode)
     
     # Initialize all connections in parallel
     postgres, graph, opensearch, redis, dynamodb = await asyncio.gather(
@@ -192,23 +230,55 @@ async def init_db_clients(settings) -> DatabaseClients:
         return_exceptions=True
     )
     
-    # Handle any exceptions
+    # Handle any exceptions based on MOCK_MODE
     if isinstance(postgres, Exception):
-        logger.error("Postgres init failed", error=str(postgres))
+        if not mock_mode:
+            logger.error("Postgres init failed and MOCK_MODE=false - failing", error=str(postgres))
+            raise RuntimeError(f"PostgreSQL initialization failed: {postgres}") from postgres
+        logger.warning("Postgres init failed, using mock (MOCK_MODE=true)", error=str(postgres))
         postgres = MockPostgres()
     if isinstance(graph, Exception):
-        logger.error("Graph init failed", error=str(graph))
+        if not mock_mode:
+            logger.error("Graph init failed and MOCK_MODE=false - failing", error=str(graph))
+            raise RuntimeError(f"Graph DB initialization failed: {graph}") from graph
+        logger.warning("Graph init failed, using mock (MOCK_MODE=true)", error=str(graph))
         graph = MockGraph()
     if isinstance(opensearch, Exception):
-        logger.error("OpenSearch init failed", error=str(opensearch))
+        if not mock_mode:
+            logger.error("OpenSearch init failed and MOCK_MODE=false - failing", error=str(opensearch))
+            raise RuntimeError(f"OpenSearch initialization failed: {opensearch}") from opensearch
+        logger.warning("OpenSearch init failed, using mock (MOCK_MODE=true)", error=str(opensearch))
         opensearch = MockOpenSearch()
     if isinstance(redis, Exception):
-        logger.error("Redis init failed", error=str(redis))
+        if not mock_mode:
+            logger.error("Redis init failed and MOCK_MODE=false - failing", error=str(redis))
+            raise RuntimeError(f"Redis initialization failed: {redis}") from redis
+        logger.warning("Redis init failed, using mock (MOCK_MODE=true)", error=str(redis))
         redis = MockRedis()
     if isinstance(dynamodb, Exception):
-        logger.error("DynamoDB init failed", error=str(dynamodb))
+        if not mock_mode:
+            logger.error("DynamoDB init failed and MOCK_MODE=false - failing", error=str(dynamodb))
+            raise RuntimeError(f"DynamoDB initialization failed: {dynamodb}") from dynamodb
+        logger.warning("DynamoDB init failed, using mock (MOCK_MODE=true)", error=str(dynamodb))
         from aegis.db.dynamodb import MockDynamoDBClient
         dynamodb = MockDynamoDBClient()
+    
+    # Check if any are mocks and log warning
+    mock_count = sum([
+        isinstance(postgres, MockPostgres),
+        isinstance(graph, MockGraph),
+        isinstance(opensearch, MockOpenSearch),
+        isinstance(redis, MockRedis),
+    ])
+    
+    if mock_count > 0:
+        logger.warning(
+            f"Using {mock_count} mock client(s) (MOCK_MODE={mock_mode})",
+            postgres_mock=isinstance(postgres, MockPostgres),
+            graph_mock=isinstance(graph, MockGraph),
+            opensearch_mock=isinstance(opensearch, MockOpenSearch),
+            redis_mock=isinstance(redis, MockRedis),
+        )
     
     _clients = DatabaseClients(
         postgres=postgres,
@@ -219,7 +289,7 @@ async def init_db_clients(settings) -> DatabaseClients:
         _initialized=True
     )
     
-    logger.info("Database connections initialized")
+    logger.info("Database connections initialized", mock_count=mock_count)
     return _clients
 
 
