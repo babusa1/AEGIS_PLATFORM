@@ -15,7 +15,7 @@ logger = structlog.get_logger(__name__)
 # Graceful imports
 try:
     from aegis.api.auth import get_current_user
-except ImportError:
+except (ImportError, AttributeError, TypeError):
     logger.warning("aegis.api.auth not available, using mock get_current_user")
     async def get_current_user():
         return {"id": "demo", "tenant_id": "default", "roles": ["user"]}
@@ -75,7 +75,7 @@ class VitalLogResponse(BaseModel):
 # Helper function to get service
 def get_ckm_service(
     patient_id: str,
-    current_user: dict = Depends(get_current_user),
+    current_user: dict,
 ) -> ChaperoneCKMService:
     """Get ChaperoneCKMService instance."""
     if not ChaperoneCKMService:

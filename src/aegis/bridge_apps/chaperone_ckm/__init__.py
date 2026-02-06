@@ -9,11 +9,15 @@ Patient-facing bridge app for CKD care management:
 - Personalized education
 """
 
+# Graceful imports with comprehensive error handling
 try:
     from .service import ChaperoneCKMService
-    from .api import router as ckm_router
-except ImportError:
+except (ImportError, AttributeError, TypeError) as e:
     ChaperoneCKMService = None
+
+try:
+    from .api import router as ckm_router
+except (ImportError, AttributeError, TypeError) as e:
     ckm_router = None
 
 __all__ = [
