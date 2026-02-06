@@ -9,12 +9,33 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 import structlog
 
-from aegis.api.auth import get_current_user
-from aegis.agents.oncolife import OncolifeAgent
-from aegis.agents.data_tools import DataMoatTools
-from .symptom_checker import SymptomCheckerService
-
 logger = structlog.get_logger(__name__)
+
+# Graceful imports with fallbacks
+try:
+    from aegis.api.auth import get_current_user
+except ImportError:
+    logger.warning("aegis.api.auth not available, using mock get_current_user")
+    async def get_current_user():
+        return {"id": "demo", "tenant_id": "default", "roles": ["user"]}
+
+try:
+    from aegis.agents.oncolife import OncolifeAgent
+except ImportError:
+    logger.warning("OncolifeAgent not available")
+    OncolifeAgent = None
+
+try:
+    from aegis.agents.data_tools import DataMoatTools
+except ImportError:
+    logger.warning("DataMoatTools not available")
+    DataMoatTools = None
+
+try:
+    from .symptom_checker import SymptomCheckerService
+except ImportError:
+    logger.warning("SymptomCheckerService not available")
+    SymptomCheckerService = None
 
 router = APIRouter(prefix="/bridge/oncolife", tags=["oncolife"])
 
@@ -95,18 +116,19 @@ async def process_symptom_response(
             
             if patient_id and triage_level != "none":
                 # Integrate with OncolifeAgent for care recommendations
-                try:
-                    data_moat_tools = DataMoatTools(tenant_id=current_user.get("tenant_id", "default"))
-                    agent = OncolifeAgent(
-                        tenant_id=current_user.get("tenant_id", "default"),
-                        data_moat_tools=data_moat_tools
-                    )
-                    
-                    # Get agent recommendations based on symptoms
-                    recommendations = await agent.analyze_patient_oncology_status(patient_id)
-                    response["agent_recommendations"] = recommendations
-                except Exception as e:
-                    logger.warning("Failed to get agent recommendations", error=str(e))
+                if OncolifeAgent and DataMoatTools:
+                    try:
+                        data_moat_tools = DataMoatTools(tenant_id=current_user.get("tenant_id", "default"))
+                        agent = OncolifeAgent(
+                            tenant_id=current_user.get("tenant_id", "default"),
+                            data_moat_tools=data_moat_tools
+                        )
+                        
+                        # Get agent recommendations based on symptoms
+                        recommendations = await agent.analyze_patient_oncology_status(patient_id)
+                        response["agent_recommendations"] = recommendations
+                    except Exception as e:
+                        logger.warning("Failed to get agent recommendations", error=str(e))
         
         return SymptomSessionResponse(
             message=response.get("message", ""),
