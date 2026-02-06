@@ -373,6 +373,13 @@ try:
 except (ImportError, AttributeError, TypeError) as e:
     logger.debug(f"Oncolife bridge app not available: {e}")
 
+try:
+    from aegis.bridge_apps.chaperone_ckm import ckm_router
+    if ckm_router:
+        app.include_router(ckm_router, prefix="/v1")
+except (ImportError, AttributeError, TypeError) as e:
+    logger.debug(f"Chaperone CKM bridge app not available: {e}")
+
 # GraphQL prototype mount (strawberry)
 try:
     from aegis.api.routes.graphql import graphql_app

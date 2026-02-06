@@ -544,3 +544,112 @@ Always cite your data sources and provide actionable recommendations."""
             recommendations.append("Begin dialysis planning and patient education")
         
         return recommendations
+    
+    async def analyze_vital_alert(
+        self,
+        patient_id: str,
+        vital_type: str,
+        value: float,
+        additional_data: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Real-time analysis of vital sign logging.
+        
+        Provides alerts and recommendations based on vital values.
+        
+        Args:
+            patient_id: Patient identifier
+            vital_type: Type of vital (bp_systolic, bp_diastolic, weight, etc.)
+            value: Vital value
+            additional_data: Additional context (e.g., diastolic BP when logging systolic)
+        
+        Returns:
+            Alert with risk level and recommendation
+        """
+        logger.info("ChaperoneCKM: analyze_vital_alert", patient_id=patient_id, vital_type=vital_type, value=value)
+        
+        try:
+            alert_level = "none"
+            message = ""
+            recommendation = ""
+            
+            # BP analysis
+            if "bp" in vital_type.lower():
+                if "systolic" in vital_type.lower():
+                    if value > 180:
+                        alert_level = "critical"
+                        message = "Severe hypertension - seek immediate medical attention"
+                        recommendation = "Go to emergency room or call 911"
+                    elif value > 160:
+                        alert_level = "high"
+                        message = "Stage 2 hypertension"
+                        recommendation = "Contact your nephrologist within 24 hours"
+                    elif value > 140:
+                        alert_level = "moderate"
+                        message = "Elevated BP"
+                        recommendation = "Monitor and discuss with care team at next visit"
+                    elif value < 90:
+                        alert_level = "moderate"
+                        message = "Low BP - possible hypotension"
+                        recommendation = "Monitor for dizziness or fainting"
+                
+                elif "diastolic" in vital_type.lower():
+                    if value > 120:
+                        alert_level = "critical"
+                        message = "Severe hypertension - seek immediate medical attention"
+                        recommendation = "Go to emergency room or call 911"
+                    elif value > 100:
+                        alert_level = "high"
+                        message = "Stage 2 hypertension"
+                        recommendation = "Contact your nephrologist within 24 hours"
+                    elif value > 90:
+                        alert_level = "moderate"
+                        message = "Elevated BP"
+                        recommendation = "Monitor and discuss with care team"
+                    elif value < 60:
+                        alert_level = "moderate"
+                        message = "Low BP - possible hypotension"
+                        recommendation = "Monitor for dizziness"
+            
+            # Weight analysis (for fluid retention)
+            elif "weight" in vital_type.lower():
+                # Get recent weight trend
+                if self.data_moat:
+                    vitals = await self.data_moat.list_entities(
+                        "vital",
+                        filters={"patient_id": patient_id, "vital_type": "weight"},
+                        limit=5,
+                    )
+                    weight_history = vitals.get("entities", [])
+                    
+                    if len(weight_history) >= 2:
+                        previous_weight = weight_history[-2].get("value")
+                        weight_change = value - previous_weight
+                        weight_change_pct = (weight_change / previous_weight * 100) if previous_weight > 0 else 0
+                        
+                        # Rapid weight gain (fluid retention)
+                        if weight_change > 5 or weight_change_pct > 5:
+                            alert_level = "high"
+                            message = f"Rapid weight gain ({weight_change:.1f} lbs) - possible fluid retention"
+                            recommendation = "Contact your nephrologist - may indicate worsening kidney function"
+                        elif weight_change > 2:
+                            alert_level = "moderate"
+                            message = f"Weight gain ({weight_change:.1f} lbs)"
+                            recommendation = "Monitor for fluid retention signs (swelling, shortness of breath)"
+            
+            return {
+                "alert_level": alert_level,
+                "message": message or "Vital logged successfully",
+                "recommendation": recommendation or "Continue monitoring",
+                "vital_type": vital_type,
+                "value": value,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+            
+        except Exception as e:
+            logger.error("analyze_vital_alert failed", error=str(e))
+            return {
+                "alert_level": "none",
+                "message": "Vital logged successfully",
+                "error": str(e),
+            }

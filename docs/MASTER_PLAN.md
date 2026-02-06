@@ -99,6 +99,14 @@
 - [x] KFRE calculation
 - [x] eGFR trending
 - [x] Care gap identification
+- [x] **Phase 2 Bridge App (Feb 2026)**: Complete patient-facing CKM app
+  - [x] Patient dashboard (`/v1/bridge/chaperone-ckm/dashboard/{patient_id}`)
+  - [x] Vital logging with real-time analysis (BP, weight)
+  - [x] Care gap tracking (`/v1/bridge/chaperone-ckm/care-gaps/{patient_id}`)
+  - [x] Medication adherence monitoring (`/v1/bridge/chaperone-ckm/medication-adherence/{patient_id}`)
+  - [x] Real-time vital alerts (`analyze_vital_alert()`)
+  - [x] Service layer (`src/aegis/bridge_apps/chaperone_ckm/service.py`)
+  - [x] REST API (`src/aegis/bridge_apps/chaperone_ckm/api.py`)
 
 **B. ONCOLIFE (Oncology Guardian)** ✅
 - [x] OncolifeAgent (`src/aegis/agents/oncolife.py`)
@@ -112,6 +120,11 @@
   - [x] Emergency safety checks
   - [x] API endpoints (`/v1/bridge/oncolife/symptom-checker/*`)
   - [x] Integration with OncolifeAgent for care recommendations
+  - [x] **Phase 1 Enhancement (Feb 2026)**: Data-aware symptom checker
+    - [x] Patient context loading (chemo regimens, labs, genomic variants, previous symptoms)
+    - [x] Context-aware symptom prioritization based on chemo regimen
+    - [x] Real-time agent consultation during sessions (`consult_symptom_context()`)
+    - [x] Personalized recommendations based on patient data
 
 ---
 

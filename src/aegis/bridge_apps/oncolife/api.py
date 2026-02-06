@@ -67,12 +67,36 @@ async def start_symptom_session(
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Start a new symptom checker session.
+    Start a new symptom checker session with patient context loading.
     
     Returns the initial disclaimer and emergency check screen.
     """
     try:
-        service = SymptomCheckerService(patient_id=request.patient_id)
+        # Initialize service with Data Moat and agent if available
+        data_moat_tools = None
+        oncolife_agent = None
+        
+        if DataMoatTools:
+            try:
+                data_moat_tools = DataMoatTools(tenant_id=current_user.get("tenant_id", "default"))
+            except Exception as e:
+                logger.warning(f"DataMoatTools not available: {e}")
+        
+        if OncolifeAgent and data_moat_tools:
+            try:
+                oncolife_agent = OncolifeAgent(
+                    tenant_id=current_user.get("tenant_id", "default"),
+                    data_moat_tools=data_moat_tools
+                )
+            except Exception as e:
+                logger.warning(f"OncolifeAgent not available: {e}")
+        
+        service = SymptomCheckerService(
+            patient_id=request.patient_id,
+            data_moat_tools=data_moat_tools,
+            oncolife_agent=oncolife_agent,
+        )
+        
         response = service.start_session()
         
         return SymptomSessionResponse(
@@ -93,42 +117,59 @@ async def process_symptom_response(
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Process a user response in the symptom checker conversation.
+    Process a user response in the symptom checker conversation with real-time agent integration.
     
-    Returns the next question, summary, or triage recommendation.
+    Returns the next question, summary, or triage recommendation, enriched with agent insights.
     """
     try:
-        service = SymptomCheckerService()
-        response = service.process_user_response(
+        # Initialize service with Data Moat and agent if available
+        data_moat_tools = None
+        oncolife_agent = None
+        
+        if DataMoatTools:
+            try:
+                data_moat_tools = DataMoatTools(tenant_id=current_user.get("tenant_id", "default"))
+            except Exception as e:
+                logger.warning(f"DataMoatTools not available: {e}")
+        
+        if OncolifeAgent and data_moat_tools:
+            try:
+                oncolife_agent = OncolifeAgent(
+                    tenant_id=current_user.get("tenant_id", "default"),
+                    data_moat_tools=data_moat_tools
+                )
+            except Exception as e:
+                logger.warning(f"OncolifeAgent not available: {e}")
+        
+        # Get patient_id from session state if available
+        patient_id = None
+        if request.session_state:
+            patient_id = request.session_state.get("patient_id")
+        
+        service = SymptomCheckerService(
+            patient_id=patient_id,
+            data_moat_tools=data_moat_tools,
+            oncolife_agent=oncolife_agent,
+        )
+        
+        # Process response (now async with agent consultation)
+        response = await service.process_user_response(
             user_response=request.user_response,
             session_state=request.session_state
         )
         
-        # If session is complete, integrate with OncolifeAgent for recommendations
+        # If session is complete, get comprehensive agent recommendations
         if response.get("is_complete"):
             triage_level = service.get_triage_level()
             summary = service.get_summary()
             
-            # Get patient_id from session state if available
-            patient_id = None
-            if request.session_state:
-                patient_id = request.session_state.get("patient_id")
-            
-            if patient_id and triage_level != "none":
-                # Integrate with OncolifeAgent for care recommendations
-                if OncolifeAgent and DataMoatTools:
-                    try:
-                        data_moat_tools = DataMoatTools(tenant_id=current_user.get("tenant_id", "default"))
-                        agent = OncolifeAgent(
-                            tenant_id=current_user.get("tenant_id", "default"),
-                            data_moat_tools=data_moat_tools
-                        )
-                        
-                        # Get agent recommendations based on symptoms
-                        recommendations = await agent.analyze_patient_oncology_status(patient_id)
-                        response["agent_recommendations"] = recommendations
-                    except Exception as e:
-                        logger.warning("Failed to get agent recommendations", error=str(e))
+            if patient_id and triage_level != "none" and oncolife_agent:
+                try:
+                    # Get comprehensive oncology status
+                    recommendations = await oncolife_agent.analyze_patient_oncology_status(patient_id)
+                    response["agent_recommendations"] = recommendations
+                except Exception as e:
+                    logger.warning("Failed to get agent recommendations", error=str(e))
         
         return SymptomSessionResponse(
             message=response.get("message", ""),
@@ -136,7 +177,7 @@ async def process_symptom_response(
             options=response.get("options", []),
             triage_level=response.get("triage_level") or service.get_triage_level(),
             session_state=service.get_session_state(),
-            patient_id=request.session_state.get("patient_id") if request.session_state else None
+            patient_id=patient_id or response.get("patient_id")
         )
     except Exception as e:
         logger.error("Failed to process symptom response", error=str(e))

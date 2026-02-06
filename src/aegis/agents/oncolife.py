@@ -367,3 +367,121 @@ Always cite your data sources and provide actionable recommendations."""
             recommendations.append(gap.get("recommendation", ""))
         
         return recommendations
+    
+    async def consult_symptom_context(
+        self,
+        patient_id: str,
+        symptom: str,
+        patient_context: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """
+        Real-time consultation during symptom checker session.
+        
+        Provides context-aware insights:
+        - Is this symptom expected for their chemo regimen?
+        - What's the risk level given their current labs?
+        - Has this patient reported similar symptoms before?
+        
+        Args:
+            patient_id: Patient identifier
+            symptom: Current symptom being discussed
+            patient_context: Pre-loaded patient context (chemo, labs, variants, etc.)
+        
+        Returns:
+            Agent insight with risk assessment and context
+        """
+        logger.info("Oncolife: consult_symptom_context", patient_id=patient_id, symptom=symptom)
+        
+        try:
+            chemo_regimens = patient_context.get("chemo_regimens", [])
+            recent_labs = patient_context.get("recent_labs", [])
+            previous_symptoms = patient_context.get("previous_symptoms", [])
+            
+            # Check if symptom is expected for current regimen
+            expected_symptoms = []
+            for regimen in chemo_regimens:
+                regimen_name = regimen.get("display", "").lower()
+                # Map regimens to expected symptoms
+                if "folfox" in regimen_name:
+                    expected_symptoms.extend(["neuropathy", "diarrhea", "nausea"])
+                elif "folfiri" in regimen_name:
+                    expected_symptoms.extend(["diarrhea", "nausea", "mouth_sores"])
+                elif "taxol" in regimen_name or "paclitaxel" in regimen_name:
+                    expected_symptoms.extend(["neuropathy", "hair_loss"])
+                elif "keytruda" in regimen_name or "pembrolizumab" in regimen_name:
+                    expected_symptoms.extend(["rash", "fatigue", "diarrhea"])
+            
+            is_expected = any(symptom.lower() in exp.lower() or exp.lower() in symptom.lower() 
+                            for exp in expected_symptoms)
+            
+            # Assess risk based on labs
+            risk_level = "low"
+            risk_factors = []
+            
+            # Check for neutropenia (fever + neutropenia = emergency)
+            if symptom.lower() in ["fever", "temperature"]:
+                neutrophil_labs = [l for l in recent_labs if "neutrophil" in l.get("test_name", "").lower()]
+                if neutrophil_labs:
+                    latest_neutrophil = neutrophil_labs[-1].get("value")
+                    if latest_neutrophil and latest_neutrophil < 1.0:
+                        risk_level = "high"
+                        risk_factors.append("Neutropenia detected - febrile neutropenia risk")
+            
+            # Check for thrombocytopenia (bleeding risk)
+            if symptom.lower() in ["bleeding", "bruising", "nosebleed"]:
+                platelet_labs = [l for l in recent_labs if "platelet" in l.get("test_name", "").lower()]
+                if platelet_labs:
+                    latest_platelet = platelet_labs[-1].get("value")
+                    if latest_platelet and latest_platelet < 50:
+                        risk_level = "high"
+                        risk_factors.append("Thrombocytopenia detected - bleeding risk")
+            
+            # Check historical patterns
+            similar_symptoms = [
+                s for s in previous_symptoms
+                if symptom.lower() in s.get("display", "").lower() or 
+                   s.get("display", "").lower() in symptom.lower()
+            ]
+            
+            return {
+                "symptom": symptom,
+                "is_expected_for_regimen": is_expected,
+                "risk_level": risk_level,
+                "risk_factors": risk_factors,
+                "historical_pattern": {
+                    "has_occurred_before": len(similar_symptoms) > 0,
+                    "previous_occurrences": len(similar_symptoms),
+                },
+                "context": {
+                    "active_regimens": [r.get("display") for r in chemo_regimens],
+                    "recent_lab_concerns": [
+                        l.get("test_name") for l in recent_labs 
+                        if l.get("abnormal", False)
+                    ][:3],  # Top 3 abnormal labs
+                },
+                "recommendation": self._generate_symptom_recommendation(
+                    symptom, is_expected, risk_level, risk_factors
+                ),
+            }
+            
+        except Exception as e:
+            logger.error("consult_symptom_context failed", error=str(e))
+            return {
+                "symptom": symptom,
+                "error": str(e),
+            }
+    
+    def _generate_symptom_recommendation(
+        self,
+        symptom: str,
+        is_expected: bool,
+        risk_level: str,
+        risk_factors: List[str],
+    ) -> str:
+        """Generate recommendation based on symptom context."""
+        if risk_level == "high":
+            return f"This {symptom} combined with your recent lab results requires immediate medical attention. Please contact your care team or go to the emergency room."
+        elif is_expected:
+            return f"This {symptom} is a known side effect of your current treatment. Continue monitoring and follow your care team's guidance."
+        else:
+            return f"Please continue with the symptom checker to assess the severity of this {symptom}."
