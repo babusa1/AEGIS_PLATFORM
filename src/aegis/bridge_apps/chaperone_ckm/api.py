@@ -34,10 +34,11 @@ except ImportError:
 
 try:
     from .service import ChaperoneCKMService
-except ImportError:
-    logger.warning("ChaperoneCKMService not available")
+except (ImportError, AttributeError, TypeError) as e:
+    logger.warning(f"ChaperoneCKMService not available: {e}")
     ChaperoneCKMService = None
 
+# Create router unconditionally - it's safe even if dependencies are missing
 router = APIRouter(prefix="/bridge/chaperone-ckm", tags=["chaperone-ckm"])
 
 

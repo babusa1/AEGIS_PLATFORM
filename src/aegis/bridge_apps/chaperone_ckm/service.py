@@ -14,14 +14,14 @@ logger = structlog.get_logger(__name__)
 # Graceful imports
 try:
     from aegis.agents.chaperone_ckm import ChaperoneCKMAgent
-except ImportError:
-    logger.warning("ChaperoneCKMAgent not available")
+except (ImportError, AttributeError, TypeError) as e:
+    logger.warning(f"ChaperoneCKMAgent not available: {e}")
     ChaperoneCKMAgent = None
 
 try:
     from aegis.agents.data_tools import DataMoatTools
-except ImportError:
-    logger.warning("DataMoatTools not available")
+except (ImportError, AttributeError, TypeError) as e:
+    logger.warning(f"DataMoatTools not available: {e}")
     DataMoatTools = None
 
 
