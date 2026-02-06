@@ -10,9 +10,16 @@ Tools that leverage the AEGIS Data Moat - unified access to:
 These tools demonstrate how agents can orchestrate across all data sources.
 """
 
-from typing import Any
+from typing import Any, Optional, Dict, List
 from datetime import datetime, timedelta, date
 import structlog
+
+from aegis.agents.entity_registry import (
+    EntityType,
+    get_entity_metadata,
+    list_all_entity_types,
+    get_entity_count,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -532,6 +539,189 @@ class DataMoatTools:
             return {"error": str(e)}
     
     # =========================================================================
+    # Generic Entity Query Tools - Query all 30+ entities
+    # =========================================================================
+    
+    async def get_entity_by_id(
+        self,
+        entity_type: str,
+        entity_id: str,
+    ) -> dict:
+        """
+        Get a single entity by type and ID from the Data Moat.
+        
+        Supports all 30+ entity types: patients, conditions, medications,
+        encounters, claims, denials, vitals, lab_results, etc.
+        
+        Args:
+            entity_type: Entity type (e.g., "patient", "condition", "claim")
+            entity_id: Entity ID
+            
+        Returns:
+            Entity data or error
+        """
+        logger.info("DataMoat: get_entity_by_id", entity_type=entity_type, entity_id=entity_id)
+        
+        if not self.pool:
+            return {"error": "Database not available", "entity_type": entity_type, "entity_id": entity_id}
+        
+        try:
+            # Get entity type enum
+            try:
+                entity_enum = EntityType(entity_type.lower())
+            except ValueError:
+                return {
+                    "error": f"Unknown entity type: {entity_type}",
+                    "available_types": [e.value for e in EntityType],
+                }
+            
+            metadata = get_entity_metadata(entity_enum)
+            if not metadata:
+                return {"error": f"No metadata found for entity type: {entity_type}"}
+            
+            table = metadata.get("table")
+            primary_key = metadata.get("primary_key")
+            tenant_column = metadata.get("tenant_column")
+            
+            if not table:
+                return {"error": f"No table defined for entity type: {entity_type}"}
+            
+            if not primary_key:
+                return {"error": f"Entity type {entity_type} is time-series and requires time-based queries"}
+            
+            async with self.pool.acquire() as conn:
+                # Build query with tenant filtering if applicable
+                if tenant_column:
+                    query = f'SELECT * FROM {table} WHERE {primary_key} = $1 AND {tenant_column} = $2'
+                    row = await conn.fetchrow(query, entity_id, self.tenant_id)
+                else:
+                    query = f'SELECT * FROM {table} WHERE {primary_key} = $1'
+                    row = await conn.fetchrow(query, entity_id)
+                
+                if not row:
+                    return {
+                        "error": f"Entity {entity_type} with id {entity_id} not found",
+                        "entity_type": entity_type,
+                        "entity_id": entity_id,
+                    }
+                
+                return {
+                    "entity_type": entity_type,
+                    "entity_id": entity_id,
+                    "data": dict(row),
+                }
+                
+        except Exception as e:
+            logger.error("get_entity_by_id failed", error=str(e), entity_type=entity_type)
+            return {"error": str(e), "entity_type": entity_type, "entity_id": entity_id}
+    
+    async def list_entities(
+        self,
+        entity_type: str,
+        filters: Optional[Dict[str, Any]] = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> dict:
+        """
+        List entities by type with optional filters.
+        
+        Supports all 30+ entity types. Filters are applied as WHERE clauses.
+        
+        Args:
+            entity_type: Entity type (e.g., "patient", "condition", "claim")
+            filters: Optional dict of column -> value filters
+            limit: Maximum number of results
+            offset: Offset for pagination
+            
+        Returns:
+            List of entities matching criteria
+        """
+        logger.info("DataMoat: list_entities", entity_type=entity_type, filters=filters, limit=limit)
+        
+        if not self.pool:
+            return {"error": "Database not available", "entity_type": entity_type}
+        
+        try:
+            # Get entity type enum
+            try:
+                entity_enum = EntityType(entity_type.lower())
+            except ValueError:
+                return {
+                    "error": f"Unknown entity type: {entity_type}",
+                    "available_types": [e.value for e in EntityType],
+                }
+            
+            metadata = get_entity_metadata(entity_enum)
+            if not metadata:
+                return {"error": f"No metadata found for entity type: {entity_type}"}
+            
+            table = metadata.get("table")
+            tenant_column = metadata.get("tenant_column")
+            
+            if not table:
+                return {"error": f"No table defined for entity type: {entity_type}"}
+            
+            async with self.pool.acquire() as conn:
+                # Build WHERE clause
+                where_clauses = []
+                params = []
+                param_idx = 1
+                
+                # Add tenant filter if applicable
+                if tenant_column:
+                    where_clauses.append(f"{tenant_column} = ${param_idx}")
+                    params.append(self.tenant_id)
+                    param_idx += 1
+                
+                # Add user filters
+                if filters:
+                    for column, value in filters.items():
+                        where_clauses.append(f"{column} = ${param_idx}")
+                        params.append(value)
+                        param_idx += 1
+                
+                where_sql = " AND ".join(where_clauses) if where_clauses else "1=1"
+                
+                # Build query
+                query = f"SELECT * FROM {table} WHERE {where_sql} LIMIT ${param_idx} OFFSET ${param_idx + 1}"
+                params.extend([limit, offset])
+                
+                rows = await conn.fetch(query, *params)
+                
+                # Get total count for pagination
+                count_query = f"SELECT COUNT(*) as total FROM {table} WHERE {where_sql}"
+                count_row = await conn.fetchrow(count_query, *params[:-2])  # Exclude limit/offset
+                total = count_row["total"] if count_row else 0
+                
+                return {
+                    "entity_type": entity_type,
+                    "entities": [dict(row) for row in rows],
+                    "total": total,
+                    "limit": limit,
+                    "offset": offset,
+                    "has_more": (offset + len(rows)) < total,
+                }
+                
+        except Exception as e:
+            logger.error("list_entities failed", error=str(e), entity_type=entity_type)
+            return {"error": str(e), "entity_type": entity_type}
+    
+    async def get_entity_registry(self) -> dict:
+        """
+        Get the Data Moat entity registry - all 30+ entity types available.
+        
+        Returns:
+            Registry of all entity types with metadata
+        """
+        logger.info("DataMoat: get_entity_registry")
+        
+        return {
+            "total_entity_types": get_entity_count(),
+            "entities": list_all_entity_types(),
+            "description": "Data Moat Entity Registry - unified access to all healthcare data entities",
+        }
+    
+    # =========================================================================
     # Tool Registry
     # =========================================================================
     
@@ -543,6 +733,31 @@ class DataMoatTools:
             Dictionary of tool name -> {function, description}
         """
         return {
+            # Generic entity query tools (NEW - query all 30+ entities)
+            "get_entity_by_id": {
+                "function": self.get_entity_by_id,
+                "description": "Get any entity by type and ID from the Data Moat (supports all 30+ entity types)",
+                "parameters": {
+                    "entity_type": "string (e.g., 'patient', 'condition', 'claim', 'denial')",
+                    "entity_id": "string",
+                },
+            },
+            "list_entities": {
+                "function": self.list_entities,
+                "description": "List entities by type with optional filters (supports all 30+ entity types)",
+                "parameters": {
+                    "entity_type": "string",
+                    "filters": "dict (optional, column -> value)",
+                    "limit": "integer (default: 100)",
+                    "offset": "integer (default: 0)",
+                },
+            },
+            "get_entity_registry": {
+                "function": self.get_entity_registry,
+                "description": "Get the Data Moat entity registry - list of all 30+ entity types",
+                "parameters": {},
+            },
+            # Specific tools (existing)
             "get_patient_summary": {
                 "function": self.get_patient_summary,
                 "description": "Get comprehensive patient summary from the Data Moat (demographics, conditions, medications, vitals, labs, encounters)",
