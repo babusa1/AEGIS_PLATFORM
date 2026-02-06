@@ -143,7 +143,7 @@ class AuditLogger:
     - Structured audit events
     - PHI detection in audit data
     - Multiple output destinations
-    - Immutable logging
+    - Immutable logging (via ImmutableAuditLogger)
     """
     
     def __init__(
@@ -151,19 +151,35 @@ class AuditLogger:
         pool=None,  # Database connection pool
         kafka_producer=None,  # For streaming
         detect_phi: bool = True,
+        use_immutable: bool = True,  # Use immutable audit log by default
     ):
         self.pool = pool
         self.kafka_producer = kafka_producer
         self.detect_phi = detect_phi
+        self.use_immutable = use_immutable
         
         # PHI detector for audit data
         if detect_phi:
-            from aegis.security.phi import PHIDetector
-            self._phi_detector = PHIDetector(sensitivity="high")
+            try:
+                from aegis.security.phi_detection import PHIDetector
+                self._phi_detector = PHIDetector(sensitivity="high")
+            except ImportError:
+                self._phi_detector = None
         else:
             self._phi_detector = None
         
-        # In-memory buffer for batch inserts
+        # Immutable audit logger (for HIPAA compliance)
+        if use_immutable:
+            try:
+                from aegis.security.immutable_audit import get_immutable_audit_logger
+                self._immutable_logger = get_immutable_audit_logger(pool=pool)
+            except ImportError:
+                self._immutable_logger = None
+                logger.warning("Immutable audit logger not available")
+        else:
+            self._immutable_logger = None
+        
+        # In-memory buffer for batch inserts (legacy/fallback)
         self._buffer: List[AuditEvent] = []
         self._max_buffer = 100
     
@@ -175,12 +191,16 @@ class AuditLogger:
         """
         # Detect PHI in event details
         if self._phi_detector and event.details:
-            details_str = json.dumps(event.details)
-            if self._phi_detector.contains_phi(details_str):
-                event.contains_phi = True
-                event.phi_types = [
-                    t.value for t in self._phi_detector.get_phi_types(details_str)
-                ]
+            try:
+                details_str = json.dumps(event.details)
+                # Use detect() method to find PHI
+                detected_entities = self._phi_detector.detect(details_str)
+                if detected_entities:
+                    event.contains_phi = True
+                    # Extract unique entity types
+                    event.phi_types = list(set([e.get("type", "unknown") for e in detected_entities]))
+            except Exception as e:
+                logger.debug(f"PHI detection failed: {e}")
         
         # Log to structured logger
         logger.info(
@@ -188,10 +208,19 @@ class AuditLogger:
             **event.to_log_dict(),
         )
         
-        # Buffer for database
-        self._buffer.append(event)
+        # Log to immutable audit log (HIPAA-compliant)
+        if self._immutable_logger:
+            try:
+                await self._immutable_logger.log(event)
+            except Exception as e:
+                logger.error(f"Failed to log to immutable audit: {e}")
+                # Fall back to regular buffer
+                self._buffer.append(event)
+        else:
+            # Fallback to regular buffer
+            self._buffer.append(event)
         
-        # Flush if buffer is full
+        # Flush if buffer is full (legacy fallback)
         if len(self._buffer) >= self._max_buffer:
             await self.flush()
         
@@ -468,8 +497,12 @@ def get_audit_logger() -> AuditLogger:
     return _audit_logger
 
 
-def configure_audit_logger(pool=None, kafka_producer=None) -> AuditLogger:
+def configure_audit_logger(pool=None, kafka_producer=None, use_immutable: bool = True) -> AuditLogger:
     """Configure global audit logger."""
     global _audit_logger
-    _audit_logger = AuditLogger(pool=pool, kafka_producer=kafka_producer)
+    _audit_logger = AuditLogger(
+        pool=pool, 
+        kafka_producer=kafka_producer,
+        use_immutable=use_immutable
+    )
     return _audit_logger
