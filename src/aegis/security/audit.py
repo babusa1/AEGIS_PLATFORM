@@ -162,9 +162,10 @@ class AuditLogger:
         if detect_phi:
             try:
                 from aegis.security.phi_detection import PHIDetector
-                self._phi_detector = PHIDetector(sensitivity="high")
+                self._phi_detector = PHIDetector()
             except ImportError:
                 self._phi_detector = None
+                logger.warning("PHI detector not available")
         else:
             self._phi_detector = None
         
