@@ -25,14 +25,14 @@ except (ImportError, AttributeError, TypeError) as e:
 
 try:
     from aegis.agents.chaperone_ckm import ChaperoneCKMAgent
-except ImportError:
-    logger.warning("ChaperoneCKMAgent not available")
+except (ImportError, AttributeError, TypeError) as e:
+    logger.warning(f"ChaperoneCKMAgent not available: {e}")
     ChaperoneCKMAgent = None
 
 try:
     from aegis.agents.data_tools import DataMoatTools
-except ImportError:
-    logger.warning("DataMoatTools not available")
+except (ImportError, AttributeError, TypeError) as e:
+    logger.warning(f"DataMoatTools not available: {e}")
     DataMoatTools = None
 
 try:
@@ -41,14 +41,9 @@ except (ImportError, AttributeError, TypeError) as e:
     logger.warning(f"ChaperoneCKMService not available: {e}")
     ChaperoneCKMService = None
 
-# Create router unconditionally - it's safe even if dependencies are missing
-# Wrap in try-except to ensure router is always created, even if there are import issues
-try:
-    router = APIRouter(prefix="/bridge/chaperone-ckm", tags=["chaperone-ckm"])
-except Exception as e:
-    logger.error(f"Failed to create CKM router: {e}")
-    # Create a minimal router as fallback
-    router = APIRouter(prefix="/bridge/chaperone-ckm", tags=["chaperone-ckm"])
+# Create router unconditionally - MUST be created before endpoint definitions
+# This ensures router exists even if endpoint definitions fail
+router = APIRouter(prefix="/bridge/chaperone-ckm", tags=["chaperone-ckm"])
 
 
 # Request/Response Models

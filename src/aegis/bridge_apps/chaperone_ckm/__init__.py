@@ -17,8 +17,18 @@ except (ImportError, AttributeError, TypeError) as e:
 
 try:
     from .api import router as ckm_router
+    # Ensure router exists and is not None
+    if ckm_router is None:
+        logger.warning("ckm_router is None, creating fallback router")
+        from fastapi import APIRouter
+        ckm_router = APIRouter()
 except (ImportError, AttributeError, TypeError) as e:
-    ckm_router = None
+    logger.warning(f"Failed to import ckm_router: {e}")
+    try:
+        from fastapi import APIRouter
+        ckm_router = APIRouter()  # Fallback empty router
+    except Exception:
+        ckm_router = None
 
 __all__ = [
     'ChaperoneCKMService',

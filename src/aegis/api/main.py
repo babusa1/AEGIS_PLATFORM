@@ -377,7 +377,7 @@ try:
     from aegis.bridge_apps.chaperone_ckm import ckm_router
     if ckm_router:
         app.include_router(ckm_router, prefix="/v1")
-except (ImportError, AttributeError, TypeError) as e:
+except (ImportError, AttributeError, TypeError, SyntaxError, NameError) as e:
     logger.debug(f"Chaperone CKM bridge app not available: {e}")
 
 # GraphQL prototype mount (strawberry)
