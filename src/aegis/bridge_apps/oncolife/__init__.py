@@ -1,16 +1,22 @@
-"""
-Oncolife Bridge App - Oncology Symptom Checker & Care Management
+# Symptom Checker Module
+# Rule-based symptom triage engine for oncology patients
 
-Integrates the Oncolife symptom checker engine with AEGIS Data Moat and Agentic Framework.
+from .symptom_definitions import SYMPTOMS, SymptomDef, Question, Option
+from .symptom_engine import SymptomCheckerEngine
+from .constants import TriageLevel, InputType, SymptomCategory
 
-The symptom checker provides:
-- Rule-based symptom triage (27 symptom modules)
-- Emergency safety checks
-- CTCAE-graded toxicity monitoring
-- Integration with OncolifeAgent for care recommendations
-"""
+__all__ = [
+    'SYMPTOMS',
+    'SymptomDef',
+    'Question',
+    'Option',
+    'SymptomCheckerEngine',
+    'TriageLevel',
+    'InputType',
+    'SymptomCategory'
+]
 
-from .symptom_checker import SymptomCheckerService
-from .api import router as oncolife_router
 
-__all__ = ['SymptomCheckerService', 'oncolife_router']
+
+
+

@@ -350,8 +350,8 @@ from aegis.notifications.webhooks import router as notifications_router
 try:
     from aegis.bridge_apps.oncolife import oncolife_router
     app.include_router(oncolife_router, prefix="/v1")
-except ImportError:
-    logger.warning("Oncolife bridge app not available")
+except (ImportError, AttributeError) as e:
+    logger.warning(f"Oncolife bridge app not available: {e}")
 
 # V1 API routes
 app.include_router(auth_router, prefix="/v1")

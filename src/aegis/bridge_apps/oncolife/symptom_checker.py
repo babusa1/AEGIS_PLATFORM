@@ -10,17 +10,10 @@ from pathlib import Path
 
 logger = structlog.get_logger(__name__)
 
-# Try to import from Oncolife repo if available
-ONCOLIFE_AVAILABLE = False
+# Import from local files (copied into AEGIS)
 try:
-    # Attempt to import from the Oncolife repo structure
-    import sys
-    oncolife_path = Path(__file__).parent.parent.parent.parent.parent.parent / "oncolife_temp" / "apps" / "patient-platform" / "patient-api" / "src"
-    if oncolife_path.exists():
-        sys.path.insert(0, str(oncolife_path))
-    
-    from routers.chat.symptom_checker.symptom_engine import SymptomCheckerEngine
-    from routers.chat.symptom_checker.constants import TriageLevel
+    from .symptom_engine import SymptomCheckerEngine, ConversationState
+    from .constants import TriageLevel
     ONCOLIFE_AVAILABLE = True
 except (ImportError, AttributeError) as e:
     logger.warning(f"Oncolife symptom checker engine not found: {e}. Using mock implementation.")
@@ -33,7 +26,7 @@ except (ImportError, AttributeError) as e:
         
         def start_conversation(self):
             return {
-                "message": "Symptom checker not available. Please ensure Oncolife repo is integrated.",
+                "message": "Symptom checker not available. Please ensure files are copied.",
                 "message_type": "error"
             }
         
@@ -48,6 +41,11 @@ except (ImportError, AttributeError) as e:
         
         def set_state(self, state):
             self.state = state
+    
+    class ConversationState:
+        @classmethod
+        def from_dict(cls, data):
+            return cls()
     
     class TriageLevel:
         NONE = "none"
@@ -119,7 +117,6 @@ class SymptomCheckerService:
         # Restore state if provided
         if session_state and ONCOLIFE_AVAILABLE:
             try:
-                from routers.chat.symptom_checker.symptom_engine import ConversationState
                 self.engine.set_state(ConversationState.from_dict(session_state))
             except Exception as e:
                 logger.warning(f"Failed to restore session state: {e}")

@@ -143,12 +143,13 @@ async def get_available_symptoms(current_user: dict = Depends(get_current_user))
     Get list of available symptoms for selection.
     """
     try:
-        from routers.chat.symptom_checker.symptom_engine import SymptomCheckerEngine
+        from .symptom_engine import SymptomCheckerEngine
         symptoms = SymptomCheckerEngine.get_available_symptoms()
         return symptoms
-    except ImportError:
+    except ImportError as e:
+        logger.warning(f"Failed to import symptom engine: {e}")
         return {
             "emergency": [],
             "groups": {},
-            "message": "Symptom checker engine not available. Ensure Oncolife repo is integrated."
+            "message": "Symptom checker engine not available."
         }
