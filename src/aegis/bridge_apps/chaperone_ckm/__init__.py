@@ -10,25 +10,25 @@ Patient-facing bridge app for CKD care management:
 """
 
 # Graceful imports with comprehensive error handling
-try:
-    from .service import ChaperoneCKMService
-except (ImportError, AttributeError, TypeError) as e:
-    ChaperoneCKMService = None
+# Import router FIRST - it's safe even if service fails
+ckm_router = None
+ChaperoneCKMService = None
 
 try:
+    # Try to import router - this should always succeed
     from .api import router as ckm_router
-    # Ensure router exists and is not None
-    if ckm_router is None:
-        logger.warning("ckm_router is None, creating fallback router")
-        from fastapi import APIRouter
-        ckm_router = APIRouter()
-except (ImportError, AttributeError, TypeError) as e:
-    logger.warning(f"Failed to import ckm_router: {e}")
+except (ImportError, AttributeError, TypeError, SyntaxError, NameError) as e:
+    # If router import fails, create fallback
     try:
         from fastapi import APIRouter
         ckm_router = APIRouter()  # Fallback empty router
     except Exception:
         ckm_router = None
+
+try:
+    from .service import ChaperoneCKMService
+except (ImportError, AttributeError, TypeError, SyntaxError, NameError) as e:
+    ChaperoneCKMService = None
 
 __all__ = [
     'ChaperoneCKMService',

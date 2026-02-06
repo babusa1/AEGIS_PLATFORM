@@ -4,7 +4,7 @@ Oncolife Symptom Checker Service
 Wraps the symptom checker engine from Oncolife repo and integrates with AEGIS.
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import structlog
 from pathlib import Path
 
