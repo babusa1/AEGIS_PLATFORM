@@ -106,6 +106,12 @@
 - [x] Chemo regimen tracking
 - [x] Toxicity monitoring
 - [x] CTCAE grading support
+- [x] **Symptom Checker Bridge App** (`src/aegis/bridge_apps/oncolife/`)
+  - [x] 27 symptom modules integrated
+  - [x] Rule-based triage engine
+  - [x] Emergency safety checks
+  - [x] API endpoints (`/v1/bridge/oncolife/symptom-checker/*`)
+  - [x] Integration with OncolifeAgent for care recommendations
 
 ---
 
@@ -247,10 +253,11 @@
 9. [ ] **Immutable Logs**: Append-only audit storage
 
 ### Next Quarter (P2)
-10. [ ] **Mobile Apps**: React Native for Oncolife/CKM
+10. [ ] **Mobile Apps**: React Native for Oncolife/CKM (symptom checker UI)
 11. [ ] **SMART-on-FHIR**: EHR embedding
 12. [ ] **OCR/NLP Pipeline**: Enhanced PDF extraction
 13. [ ] **Predictive Models**: Readmission, LOS, denial prediction
+14. [x] **Oncolife Symptom Checker Integration**: Bridge app integrated ✅
 
 ---
 
@@ -299,7 +306,8 @@
 | Component | Status | Notes |
 |-----------|--------|-------|
 | CKM Bridge | ✅ Complete | ChaperoneCKMAgent fully implemented |
-| ONCOLIFE | ✅ Complete | OncolifeAgent fully implemented |
+| ONCOLIFE | ✅ Complete | OncolifeAgent + Symptom Checker integrated |
+| ONCOLIFE Symptom Checker | ✅ Complete | 27 modules, triage engine, API endpoints |
 
 ### HITL & Governance (Pillar 5)
 | Component | Status | Notes |
