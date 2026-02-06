@@ -12,11 +12,14 @@ import structlog
 
 logger = structlog.get_logger(__name__)
 
-# Graceful imports
+# Graceful imports - ensure get_current_user is always defined and callable
 try:
     from aegis.api.auth import get_current_user
-except (ImportError, AttributeError, TypeError):
-    logger.warning("aegis.api.auth not available, using mock get_current_user")
+    # Verify it's callable
+    if not callable(get_current_user):
+        raise AttributeError("get_current_user is not callable")
+except (ImportError, AttributeError, TypeError) as e:
+    logger.warning(f"aegis.api.auth not available ({e}), using mock get_current_user")
     async def get_current_user():
         return {"id": "demo", "tenant_id": "default", "roles": ["user"]}
 
