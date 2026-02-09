@@ -364,6 +364,7 @@ safe_include_router("aegis.clinical.sdoh", "router", "/v1")
 safe_include_router("aegis.clinical.symptoms", "router", "/v1")
 safe_include_router("aegis.notifications.webhooks", "router", "/v1")
 safe_include_router("aegis.api.routes.audit", "router", "/v1")
+safe_include_router("aegis.api.routes.cowork", "router", "/v1")
 
 # Bridge Apps
 try:
