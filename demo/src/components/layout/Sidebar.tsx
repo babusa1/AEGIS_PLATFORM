@@ -11,12 +11,14 @@ import {
   BarChart3,
   Settings,
   Database,
-  Shield
+  Shield,
+  MessageSquare
 } from 'lucide-react'
 import clsx from 'clsx'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Cowork', href: '/cowork', icon: MessageSquare },
   { name: 'Patients', href: '/patients', icon: Users },
   { name: 'Claims', href: '/claims', icon: FileText },
   { name: 'Denials', href: '/denials', icon: AlertCircle },
