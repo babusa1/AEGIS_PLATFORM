@@ -50,7 +50,7 @@ const actions = [
     name: 'View Analytics',
     description: 'Denial and revenue reports',
     icon: BarChart3,
-    href: '/analytics',
+    href: '/intelligence',
     color: 'bg-indigo-500',
   },
 ]

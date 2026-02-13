@@ -23,7 +23,7 @@ const navigation = [
   { name: 'Claims', href: '/claims', icon: FileText },
   { name: 'Denials', href: '/denials', icon: AlertCircle },
   { name: 'AI Agents', href: '/agents', icon: Bot },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+  { name: 'Analytics', href: '/intelligence', icon: BarChart3 },
   { name: 'Data Ingestion', href: '/ingestion', icon: Database },
 ]
 
