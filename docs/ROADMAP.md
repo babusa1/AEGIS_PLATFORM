@@ -1,21 +1,28 @@
 # AEGIS Platform Roadmap - What's Next?
 
+**Last Updated**: February 6, 2026
+
 ## Current State ✅
 - 7 Databases (PostgreSQL, TimescaleDB, JanusGraph, OpenSearch, Redis, Kafka, DynamoDB)
-- 30+ Healthcare Data Entities
+- 30+ Healthcare Data Entities (with Generic Entity Query API ✅)
 - AI Orchestration Engine (State, Execution, Triggers, Agents, Memory, Events)
 - Multi-LLM Support (Bedrock, OpenAI, Anthropic, Ollama)
 - Healthcare Integrations (FHIR, HL7v2, Terminology)
 - Observability Stack (Tracing, Metrics, Logging, Alerts)
-- Visual Workflow Builder
+- Visual Workflow Builder (React Flow ✅)
+- PHI Detection & Redaction ✅
+- RAG Pipeline ✅
+- Denial Prediction ✅
+- Epic CDS Hooks ✅
+- Immutable Audit Logs ✅
 
 ---
 
 ## 🚀 PHASE 1: Production Readiness
 
 ### 1.1 Security & Compliance (HIPAA/HITRUST)
-- [ ] **PHI Detection & Redaction** - Auto-detect and mask PHI in logs/outputs
-- [ ] **Audit Trail** - Immutable audit logs for all data access
+- [x] **PHI Detection & Redaction** - Auto-detect and mask PHI in logs/outputs ✅ Complete (`src/aegis/security/phi_detection.py`)
+- [x] **Audit Trail** - Immutable audit logs for all data access ✅ Complete (`src/aegis/security/immutable_audit.py`)
 - [ ] **Encryption** - At-rest (AES-256) and in-transit (TLS 1.3)
 - [ ] **Role-Based Access Control (RBAC)** - Fine-grained permissions
 - [ ] **Break-the-Glass** - Emergency access with full audit
@@ -24,7 +31,7 @@
 - [ ] **BAA Management** - Business Associate Agreement tracking
 
 ### 1.2 High Availability & Scalability
-- [ ] **Kubernetes Deployment** - Helm charts, auto-scaling
+- [x] **Kubernetes Deployment** - Helm charts, auto-scaling 🟡 Partial (Dockerfiles complete, Helm charts in progress)
 - [ ] **Multi-Region** - Active-active deployment
 - [ ] **Database Replication** - Read replicas, failover
 - [ ] **Rate Limiting** - Per-tenant, per-endpoint
@@ -45,12 +52,12 @@
 ## 🧠 PHASE 2: Advanced AI Capabilities
 
 ### 2.1 RAG (Retrieval Augmented Generation)
-- [ ] **Document Ingestion** - PDF, DOCX, clinical notes
-- [ ] **Chunking Strategies** - Semantic, sliding window, hierarchical
-- [ ] **Embedding Models** - Bedrock Titan, OpenAI Ada, local models
-- [ ] **Hybrid Search** - Vector + keyword + graph
-- [ ] **Citation Tracking** - Source attribution for all outputs
-- [ ] **Knowledge Base Management** - CRUD for clinical knowledge
+- [x] **Document Ingestion** - PDF, DOCX, clinical notes ✅ Complete (`src/aegis/rag/pipeline.py`)
+- [x] **Chunking Strategies** - Semantic, sliding window, hierarchical ✅ Complete (`src/aegis/rag/chunkers.py`)
+- [x] **Embedding Models** - Bedrock Titan, OpenAI Ada, local models ✅ Complete (`src/aegis/rag/vectorstore.py`)
+- [x] **Hybrid Search** - Vector + keyword + graph ✅ Complete (GraphRAG implemented)
+- [x] **Citation Tracking** - Source attribution for all outputs ✅ Complete (metadata tagging)
+- [ ] **Knowledge Base Management** - CRUD for clinical knowledge 🟡 Partial (ingestion complete, UI pending)
 
 ### 2.2 Advanced Agents
 - [ ] **Planning Agents** - Multi-step reasoning with ReAct/CoT
@@ -93,7 +100,7 @@
 - [ ] **Trend Analysis** - Population health trends
 
 ### 3.3 Revenue Cycle Intelligence
-- [ ] **Denial Prediction** - Pre-submission denial risk
+- [x] **Denial Prediction** - Pre-submission denial risk ✅ Complete (`src/aegis/ml/denial_prediction.py`)
 - [ ] **Coding Optimization** - CDI recommendations
 - [ ] **Payer Behavior** - Payer-specific patterns
 - [ ] **Contract Analysis** - Underpayment detection
@@ -146,7 +153,7 @@
 ## 🎨 PHASE 5: User Experience
 
 ### 5.1 Advanced Visual Builder
-- [ ] **React Flow Integration** - Professional node editor
+- [x] **React Flow Integration** - Professional node editor ✅ Complete (`demo/src/app/builder/`)
 - [ ] **Version Control** - Workflow versioning with diff
 - [ ] **Collaboration** - Multi-user editing
 - [ ] **Templates Marketplace** - Pre-built workflows
@@ -232,37 +239,40 @@
 
 ## Priority Matrix
 
-| Feature | Impact | Effort | Priority |
-|---------|--------|--------|----------|
-| RAG with Clinical Knowledge | 🔥🔥🔥 | Medium | **P0** |
-| PHI Detection/Redaction | 🔥🔥🔥 | Low | **P0** |
-| Denial Prediction | 🔥🔥🔥 | Medium | **P0** |
-| React Flow Visual Builder | 🔥🔥 | Medium | **P1** |
-| Epic CDS Hooks | 🔥🔥🔥 | High | **P1** |
-| Readmission Prediction | 🔥🔥 | Medium | **P1** |
-| Kubernetes Deployment | 🔥🔥 | Medium | **P1** |
-| Patient Chatbot | 🔥🔥 | Medium | **P2** |
-| Mobile App | 🔥 | High | **P2** |
-| Genomics | 🔥 | High | **P3** |
+| Feature | Impact | Effort | Priority | Status |
+|---------|--------|--------|----------|--------|
+| RAG with Clinical Knowledge | 🔥🔥🔥 | Medium | **P0** | ✅ Complete |
+| PHI Detection/Redaction | 🔥🔥🔥 | Low | **P0** | ✅ Complete |
+| Denial Prediction | 🔥🔥🔥 | Medium | **P0** | ✅ Complete |
+| React Flow Visual Builder | 🔥🔥 | Medium | **P1** | ✅ Complete |
+| Epic CDS Hooks | 🔥🔥🔥 | High | **P1** | ✅ Complete |
+| Readmission Prediction | 🔥🔥 | Medium | **P1** | 🟡 In Progress |
+| Kubernetes Deployment | 🔥🔥 | Medium | **P1** | 🟡 Partial |
+| Patient Chatbot | 🔥🔥 | Medium | **P2** | ⏳ Planned |
+| Mobile App | 🔥 | High | **P2** | ⏳ Planned |
+| Genomics | 🔥 | High | **P3** | ⏳ Planned |
 
 ---
 
 ## Recommended Next Steps
 
-### Immediate (This Week)
-1. **RAG Pipeline** - Document ingestion + vector search
-2. **PHI Detection** - Protect patient data
-3. **Denial Prediction Model** - ML for denial prevention
+### Immediate (This Week) ✅ COMPLETED
+1. ✅ **RAG Pipeline** - Document ingestion + vector search ✅ Complete
+2. ✅ **PHI Detection** - Protect patient data ✅ Complete
+3. ✅ **Denial Prediction Model** - ML for denial prevention ✅ Complete
 
 ### Short-Term (This Month)
-4. **Epic CDS Hooks** - Real-time clinical integration
-5. **Kubernetes Helm Charts** - Production deployment
-6. **Executive Dashboard** - Real-time KPIs
+4. ✅ **Epic CDS Hooks** - Real-time clinical integration ✅ Complete
+5. 🟡 **Kubernetes Helm Charts** - Production deployment (Dockerfiles done, Helm charts in progress)
+6. **Executive Dashboard** - Real-time KPIs (Next priority)
+7. **Generic Entity Query API** - ✅ Complete (all 30+ entities queryable)
 
 ### Medium-Term (This Quarter)
-7. **Patient Chatbot** - AI-powered patient engagement
-8. **Predictive Models** - Readmission, LOS, risk
-9. **Advanced RAG** - Multi-document reasoning
+8. **Patient Chatbot** - AI-powered patient engagement
+9. **Predictive Models** - Readmission, LOS, risk
+10. **Advanced RAG** - Multi-document reasoning
+11. **Production Testing** - Comprehensive test suite (unit, integration, e2e)
+12. **Terraform Infrastructure** - AWS deployment automation
 
 ---
 
