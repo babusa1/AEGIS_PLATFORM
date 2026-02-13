@@ -143,6 +143,50 @@ ENTITY_METADATA: Dict[EntityType, Dict[str, Any]] = {
         "tenant_column": "tenant_id",
         "description": "Healthcare encounter/visit",
     },
+    EntityType.PROCEDURE: {
+        "table": "procedures",
+        "primary_key": "id",
+        "tenant_column": "tenant_id",
+        "description": "Clinical procedure",
+    },
+    EntityType.OBSERVATION: {
+        "table": "observations",
+        "primary_key": "id",
+        "tenant_column": "tenant_id",
+        "description": "Clinical observation (labs, vitals, assessments)",
+    },
+    EntityType.ALLERGY_INTOLERANCE: {
+        "table": "allergies",
+        "primary_key": "id",
+        "tenant_column": "tenant_id",
+        "description": "Patient allergy/intolerance",
+    },
+    EntityType.CLINICAL_NOTE: {
+        "table": "clinical_notes",
+        "primary_key": "id",
+        "tenant_column": "tenant_id",
+        "description": "Clinical documentation note",
+    },
+    
+    # Provider Domain
+    EntityType.PROVIDER: {
+        "table": "providers",
+        "primary_key": "id",
+        "tenant_column": "tenant_id",
+        "description": "Healthcare provider (physician, nurse, etc.)",
+    },
+    EntityType.ORGANIZATION: {
+        "table": "organizations",
+        "primary_key": "id",
+        "tenant_column": "tenant_id",
+        "description": "Healthcare organization (hospital, clinic, payer)",
+    },
+    EntityType.LOCATION: {
+        "table": "locations",
+        "primary_key": "id",
+        "tenant_column": "tenant_id",
+        "description": "Healthcare facility location",
+    },
     
     # Financial Domain
     EntityType.CLAIM: {
@@ -156,6 +200,42 @@ ENTITY_METADATA: Dict[EntityType, Dict[str, Any]] = {
         "primary_key": "id",
         "tenant_column": "tenant_id",
         "description": "Claim denial",
+    },
+    EntityType.CLAIM_LINE: {
+        "table": "claim_lines",
+        "primary_key": "id",
+        "tenant_column": "tenant_id",
+        "description": "Claim line item",
+    },
+    EntityType.APPEAL: {
+        "table": "appeals",
+        "primary_key": "id",
+        "tenant_column": "tenant_id",
+        "description": "Claim appeal",
+    },
+    EntityType.PAYMENT: {
+        "table": "payments",
+        "primary_key": "id",
+        "tenant_column": "tenant_id",
+        "description": "Payment/remittance",
+    },
+    EntityType.COVERAGE: {
+        "table": "coverages",
+        "primary_key": "id",
+        "tenant_column": "tenant_id",
+        "description": "Insurance coverage",
+    },
+    EntityType.PAYER: {
+        "table": "payers",
+        "primary_key": "id",
+        "tenant_column": "tenant_id",
+        "description": "Insurance payer",
+    },
+    EntityType.AUTHORIZATION: {
+        "table": "authorizations",
+        "primary_key": "id",
+        "tenant_column": "tenant_id",
+        "description": "Prior authorization",
     },
     
     # Time-Series Domain (TimescaleDB)
@@ -213,6 +293,72 @@ ENTITY_METADATA: Dict[EntityType, Dict[str, Any]] = {
         "primary_key": "id",
         "tenant_column": "tenant_id",
         "description": "Data sync job",
+    },
+    
+    # Genomics Domain
+    EntityType.GENOMIC_VARIANT: {
+        "table": "genomic_variants",
+        "primary_key": "id",
+        "tenant_column": "tenant_id",
+        "description": "Genomic variant",
+    },
+    EntityType.GENOMIC_REPORT: {
+        "table": "genomic_reports",
+        "primary_key": "id",
+        "tenant_column": "tenant_id",
+        "description": "Genomic test report",
+    },
+    
+    # Imaging Domain
+    EntityType.IMAGING_STUDY: {
+        "table": "imaging_studies",
+        "primary_key": "id",
+        "tenant_column": "tenant_id",
+        "description": "Medical imaging study",
+    },
+    EntityType.IMAGING_SERIES: {
+        "table": "imaging_series",
+        "primary_key": "id",
+        "tenant_column": "tenant_id",
+        "description": "Imaging series within a study",
+    },
+    
+    # SDOH Domain
+    EntityType.SDOH_ASSESSMENT: {
+        "table": "sdoh_assessments",
+        "primary_key": "id",
+        "tenant_column": "tenant_id",
+        "description": "Social determinants of health assessment",
+    },
+    
+    # PRO Domain
+    EntityType.PRO_RESPONSE: {
+        "table": "pro_responses",
+        "primary_key": "id",
+        "tenant_column": "tenant_id",
+        "description": "Patient-reported outcome response",
+    },
+    
+    # Messaging Domain
+    EntityType.MESSAGE: {
+        "table": "messages",
+        "primary_key": "id",
+        "tenant_column": "tenant_id",
+        "description": "Patient/clinician message",
+    },
+    
+    # Scheduling Domain
+    EntityType.APPOINTMENT: {
+        "table": "appointments",
+        "primary_key": "id",
+        "tenant_column": "tenant_id",
+        "description": "Healthcare appointment",
+    },
+    EntityType.SCHEDULE: {
+        "table": "schedules",
+        "primary_key": "id",
+        "tenant_column": "tenant_id",
+        "description": "Provider schedule",
     },
 }
 

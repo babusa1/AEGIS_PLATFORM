@@ -19,6 +19,7 @@ from aegis.agents.entity_registry import (
     get_entity_metadata,
     list_all_entity_types,
     get_entity_count,
+    ENTITY_METADATA,
 )
 
 logger = structlog.get_logger(__name__)
@@ -546,6 +547,7 @@ class DataMoatTools:
         self,
         entity_type: str,
         entity_id: str,
+        time_filter: Optional[Dict[str, Any]] = None,
     ) -> dict:
         """
         Get a single entity by type and ID from the Data Moat.
@@ -553,9 +555,13 @@ class DataMoatTools:
         Supports all 30+ entity types: patients, conditions, medications,
         encounters, claims, denials, vitals, lab_results, etc.
         
+        For time-series entities (vitals, lab_results, wearable_metrics),
+        provide time_filter dict with 'time' key to query specific timestamp.
+        
         Args:
             entity_type: Entity type (e.g., "patient", "condition", "claim")
-            entity_id: Entity ID
+            entity_id: Entity ID (or patient_id for time-series)
+            time_filter: Optional dict with 'time' key for time-series queries
             
         Returns:
             Entity data or error
@@ -582,21 +588,73 @@ class DataMoatTools:
             table = metadata.get("table")
             primary_key = metadata.get("primary_key")
             tenant_column = metadata.get("tenant_column")
+            time_column = metadata.get("time_column")
             
             if not table:
                 return {"error": f"No table defined for entity type: {entity_type}"}
             
-            if not primary_key:
-                return {"error": f"Entity type {entity_type} is time-series and requires time-based queries"}
+            # Validate table/column names are safe (whitelist from metadata)
+            if table not in [m.get("table") for m in ENTITY_METADATA.values()]:
+                return {"error": f"Invalid table name: {table}"}
             
             async with self.pool.acquire() as conn:
-                # Build query with tenant filtering if applicable
-                if tenant_column:
-                    query = f'SELECT * FROM {table} WHERE {primary_key} = $1 AND {tenant_column} = $2'
-                    row = await conn.fetchrow(query, entity_id, self.tenant_id)
+                # Handle time-series entities (no primary key)
+                if not primary_key:
+                    if not time_column:
+                        return {"error": f"Time-series entity {entity_type} requires time_column in metadata"}
+                    
+                    if not time_filter or "time" not in time_filter:
+                        return {
+                            "error": f"Time-series entity {entity_type} requires time_filter with 'time' key",
+                            "example": {"time": "2024-01-01T00:00:00Z"},
+                        }
+                    
+                    # Build time-series query
+                    where_clauses = []
+                    params = []
+                    param_idx = 1
+                    
+                    # Patient ID filter (for time-series, entity_id is patient_id)
+                    where_clauses.append(f"patient_id = ${param_idx}")
+                    params.append(entity_id)
+                    param_idx += 1
+                    
+                    # Time filter
+                    where_clauses.append(f"{time_column} = ${param_idx}")
+                    params.append(time_filter["time"])
+                    param_idx += 1
+                    
+                    # Tenant filter
+                    if tenant_column:
+                        where_clauses.append(f"{tenant_column} = ${param_idx}")
+                        params.append(self.tenant_id)
+                        param_idx += 1
+                    
+                    where_sql = " AND ".join(where_clauses)
+                    # Use parameterized query with table name from whitelist
+                    query = f'SELECT * FROM "{table}" WHERE {where_sql} ORDER BY {time_column} DESC LIMIT 1'
+                    row = await conn.fetchrow(query, *params)
                 else:
-                    query = f'SELECT * FROM {table} WHERE {primary_key} = $1'
-                    row = await conn.fetchrow(query, entity_id)
+                    # Regular entity query
+                    where_clauses = []
+                    params = []
+                    param_idx = 1
+                    
+                    # Primary key filter
+                    where_clauses.append(f'"{primary_key}" = ${param_idx}')
+                    params.append(entity_id)
+                    param_idx += 1
+                    
+                    # Tenant filter
+                    if tenant_column:
+                        where_clauses.append(f'"{tenant_column}" = ${param_idx}')
+                        params.append(self.tenant_id)
+                        param_idx += 1
+                    
+                    where_sql = " AND ".join(where_clauses)
+                    # Use parameterized query with table name from whitelist
+                    query = f'SELECT * FROM "{table}" WHERE {where_sql}'
+                    row = await conn.fetchrow(query, *params)
                 
                 if not row:
                     return {
@@ -621,17 +679,20 @@ class DataMoatTools:
         filters: Optional[Dict[str, Any]] = None,
         limit: int = 100,
         offset: int = 0,
+        time_range: Optional[Dict[str, Any]] = None,
     ) -> dict:
         """
         List entities by type with optional filters.
         
         Supports all 30+ entity types. Filters are applied as WHERE clauses.
+        For time-series entities, use time_range dict with 'start_time' and 'end_time'.
         
         Args:
             entity_type: Entity type (e.g., "patient", "condition", "claim")
-            filters: Optional dict of column -> value filters
+            filters: Optional dict of column -> value filters (validated against table columns)
             limit: Maximum number of results
             offset: Offset for pagination
+            time_range: Optional dict with 'start_time' and 'end_time' for time-series queries
             
         Returns:
             List of entities matching criteria
@@ -657,39 +718,71 @@ class DataMoatTools:
             
             table = metadata.get("table")
             tenant_column = metadata.get("tenant_column")
+            time_column = metadata.get("time_column")
+            primary_key = metadata.get("primary_key")
             
             if not table:
                 return {"error": f"No table defined for entity type: {entity_type}"}
             
+            # Validate table name is safe (whitelist from metadata)
+            if table not in [m.get("table") for m in ENTITY_METADATA.values()]:
+                return {"error": f"Invalid table name: {table}"}
+            
             async with self.pool.acquire() as conn:
+                # Get actual column names from table for filter validation
+                column_info = await conn.fetch("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name = $1
+                """, table)
+                valid_columns = {row["column_name"] for row in column_info}
+                
                 # Build WHERE clause
                 where_clauses = []
                 params = []
                 param_idx = 1
                 
                 # Add tenant filter if applicable
-                if tenant_column:
-                    where_clauses.append(f"{tenant_column} = ${param_idx}")
+                if tenant_column and tenant_column in valid_columns:
+                    where_clauses.append(f'"{tenant_column}" = ${param_idx}')
                     params.append(self.tenant_id)
                     param_idx += 1
                 
-                # Add user filters
+                # Add time range filter for time-series entities
+                if time_column and time_range:
+                    if "start_time" in time_range:
+                        where_clauses.append(f'"{time_column}" >= ${param_idx}')
+                        params.append(time_range["start_time"])
+                        param_idx += 1
+                    if "end_time" in time_range:
+                        where_clauses.append(f'"{time_column}" <= ${param_idx}')
+                        params.append(time_range["end_time"])
+                        param_idx += 1
+                
+                # Add user filters (validate column names)
                 if filters:
                     for column, value in filters.items():
-                        where_clauses.append(f"{column} = ${param_idx}")
+                        # Validate column name exists in table
+                        if column not in valid_columns:
+                            logger.warning(f"Invalid filter column: {column} for table {table}")
+                            continue
+                        where_clauses.append(f'"{column}" = ${param_idx}')
                         params.append(value)
                         param_idx += 1
                 
                 where_sql = " AND ".join(where_clauses) if where_clauses else "1=1"
                 
-                # Build query
-                query = f"SELECT * FROM {table} WHERE {where_sql} LIMIT ${param_idx} OFFSET ${param_idx + 1}"
+                # Build ORDER BY clause
+                order_by = f'"{time_column}" DESC' if time_column else f'"{primary_key}" DESC' if primary_key else "1"
+                
+                # Build query with parameterized table name (quoted for safety)
+                query = f'SELECT * FROM "{table}" WHERE {where_sql} ORDER BY {order_by} LIMIT ${param_idx} OFFSET ${param_idx + 1}'
                 params.extend([limit, offset])
                 
                 rows = await conn.fetch(query, *params)
                 
                 # Get total count for pagination
-                count_query = f"SELECT COUNT(*) as total FROM {table} WHERE {where_sql}"
+                count_query = f'SELECT COUNT(*) as total FROM "{table}" WHERE {where_sql}'
                 count_row = await conn.fetchrow(count_query, *params[:-2])  # Exclude limit/offset
                 total = count_row["total"] if count_row else 0
                 
