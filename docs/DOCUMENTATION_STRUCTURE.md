@@ -7,7 +7,7 @@
 
 ## 📁 DOCUMENTATION HIERARCHY
 
-### Tier 1: Core Documents (Must Read)
+### Tier 1: Core Documents (Must Read) ⭐
 
 These are the **essential documents** everyone should read:
 
@@ -15,41 +15,41 @@ These are the **essential documents** everyone should read:
    - Platform vision, architecture overview, business impact
    - **Audience**: Everyone (executives, developers, architects)
 
-2. **05_MASTER_PLAN.md** ⭐
-   - Single source of truth for development status
-   - **Audience**: Developers, product managers
-
----
-
-### Tier 2: Implementation Guides
-
-3. **ARCHITECTURE_REVIEW.md**
-   - Specification vs implementation comparison
+2. **01_HIGH_LEVEL_DESIGN.md** 📐
+   - System architecture, components, interactions
    - **Audience**: Architects, technical leads
 
-4. **AGENT_BUILDING_MECHANISM.md**
-   - How to build agents
-   - **Audience**: Developers building agents
+3. **02_LOW_LEVEL_DESIGN.md** 📐
+   - Detailed module design, APIs, data models
+   - **Audience**: Developers, architects
 
-5. **COWORK_IMPLEMENTATION_PLAN.md**
-   - Detailed implementation plan
-   - **Audience**: Developers implementing features
+4. **03_FUNCTIONAL_SPECIFICATION.md** 📋
+   - Complete feature specifications, use cases
+   - **Audience**: Product managers, developers, QA
+
+5. **04_NON_FUNCTIONAL_SPECIFICATION.md** 📋
+   - Performance, security, scalability requirements
+   - **Audience**: Architects, DevOps, security team
+
+6. **05_PLAN_OF_ACTION.md** 📝 ⭐
+   - Single source of truth for status and next steps
+   - **Audience**: Everyone (developers, product, executives)
 
 ---
 
-### Tier 3: Feature-Specific
+### Tier 2: Reference Documents
 
-6. **ONCOLIFE_INTEGRATION.md** - Oncolife bridge app
-7. **PHASE1_PHASE2_COMPLETION.md** - Feature completion summaries
-8. **ORCHESTRATION_ENGINE_SPEC.md** - Technical specifications
+7. **ARCHITECTURE_REVIEW.md** 🔄 - Spec vs Implementation comparison
+8. **AEGIS_VS_N8N_KOGO.md** 📊 - Competitive analysis
+9. **AGENT_BUILDING_MECHANISM.md** 📚 - Developer guide
+10. **MASTER_PLAN.md** 📚 - Development status
+11. **ROADMAP.md** 📚 - Product roadmap
 
 ---
 
-### Tier 4: Reference Documents
+### Tier 3: Architecture Decision Records (ADRs)
 
-9. **ADRs** (`adr/`) - Architecture Decision Records
-10. **Status Documents** - QUICK_STATUS, STATUS_REVIEW, etc.
-11. **Competitive Analysis** - AEGIS_VS_N8N_KOGO.md
+12-18. **adr/** - Architecture Decision Records (7 ADRs)
 
 ---
 
@@ -65,7 +65,7 @@ These are the **essential documents** everyone should read:
 ### DON'T:
 - ❌ Create duplicate documents
 - ❌ Create documents without updating index
-- ❌ Create documents for temporary status (use MASTER_PLAN.md instead)
+- ❌ Create documents for temporary status (use 05_PLAN_OF_ACTION.md instead)
 - ❌ Create documents without clear purpose
 
 ---
@@ -79,7 +79,7 @@ These are the **essential documents** everyone should read:
 
 **Status**: In Progress / Complete  
 **Last Updated**: [Date]  
-**Related**: [Link to MASTER_PLAN.md section]
+**Related**: [Link to 05_PLAN_OF_ACTION.md section]
 
 ## Overview
 [Brief description]
@@ -119,18 +119,20 @@ Accepted / Proposed / Rejected
 ### By Topic
 
 **Platform Vision**: `00_PLATFORM_OVERVIEW_VISION.md`  
-**Architecture**: `ARCHITECTURE_REVIEW.md`, `MASTER_PLAN.md`  
+**Architecture**: `01_HIGH_LEVEL_DESIGN.md`, `02_LOW_LEVEL_DESIGN.md`  
+**Features**: `03_FUNCTIONAL_SPECIFICATION.md`  
+**Quality**: `04_NON_FUNCTIONAL_SPECIFICATION.md`  
+**Status**: `05_PLAN_OF_ACTION.md`  
 **Agents**: `AGENT_BUILDING_MECHANISM.md`  
-**Status**: `MASTER_PLAN.md`, `COMPLETION_STATUS.md`  
-**Implementation**: `COWORK_IMPLEMENTATION_PLAN.md`  
 **ADRs**: `adr/` directory
 
 ### By Audience
 
 **Executives**: `00_PLATFORM_OVERVIEW_VISION.md`  
-**Developers**: `MASTER_PLAN.md`, `AGENT_BUILDING_MECHANISM.md`  
-**Architects**: `ARCHITECTURE_REVIEW.md`, `adr/`  
-**Product**: `00_PLATFORM_OVERVIEW_VISION.md`, `ROADMAP.md`
+**Architects**: `01_HIGH_LEVEL_DESIGN.md`, `02_LOW_LEVEL_DESIGN.md`  
+**Developers**: `05_PLAN_OF_ACTION.md`, `AGENT_BUILDING_MECHANISM.md`, `02_LOW_LEVEL_DESIGN.md`  
+**Product**: `00_PLATFORM_OVERVIEW_VISION.md`, `03_FUNCTIONAL_SPECIFICATION.md`, `ROADMAP.md`  
+**QA**: `03_FUNCTIONAL_SPECIFICATION.md`, `04_NON_FUNCTIONAL_SPECIFICATION.md`
 
 ---
 
@@ -139,10 +141,11 @@ Accepted / Proposed / Rejected
 | Document | Status | Last Updated | Owner |
 |----------|--------|--------------|-------|
 | 00_PLATFORM_OVERVIEW_VISION.md | ✅ Current | Feb 6, 2026 | Product |
-| MASTER_PLAN.md | ✅ Current | Feb 6, 2026 | Engineering |
-| ARCHITECTURE_REVIEW.md | ✅ Current | Feb 6, 2026 | Architecture |
-| AGENT_BUILDING_MECHANISM.md | ✅ Current | Feb 6, 2026 | Engineering |
-| COWORK_IMPLEMENTATION_PLAN.md | ✅ Current | Feb 6, 2026 | Engineering |
+| 01_HIGH_LEVEL_DESIGN.md | ✅ Current | Feb 6, 2026 | Architecture |
+| 02_LOW_LEVEL_DESIGN.md | ✅ Current | Feb 6, 2026 | Engineering |
+| 03_FUNCTIONAL_SPECIFICATION.md | ✅ Current | Feb 6, 2026 | Product |
+| 04_NON_FUNCTIONAL_SPECIFICATION.md | ✅ Current | Feb 6, 2026 | Engineering |
+| 05_PLAN_OF_ACTION.md | ✅ Current | Feb 6, 2026 | Engineering Lead |
 
 ---
 

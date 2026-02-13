@@ -7,95 +7,93 @@
 
 ## 📚 DOCUMENTATION STRUCTURE
 
-### Tier 1: Core Documents (Start Here)
+### Tier 1: Core Documents (Start Here) ⭐
 
 1. **[00_PLATFORM_OVERVIEW_VISION.md](./00_PLATFORM_OVERVIEW_VISION.md)** ⭐
    - Platform vision and executive summary
-   - Architecture overview
+   - Architecture overview (4-layer stack)
+   - 5 Pillars breakdown
    - Key differentiators
    - Business impact
 
-2. **[01_ARCHITECTURE.md](./MASTER_PLAN.md#architecture)** (See MASTER_PLAN.md)
-   - Detailed technical architecture
-   - 5 Pillars breakdown
-   - Component descriptions
+2. **[01_HIGH_LEVEL_DESIGN.md](./01_HIGH_LEVEL_DESIGN.md)** 📐
+   - System Context (C4 Level 1)
+   - Container Diagram (C4 Level 2)
+   - 5 Pillars Architecture
+   - Data Flow Diagrams
+   - Integration Architecture
+   - Deployment Architecture
 
-3. **[05_MASTER_PLAN.md](./MASTER_PLAN.md)** ⭐
-   - **Single source of truth** for development
-   - Current status and completion tracking
-   - Roadmap and TODOs
+3. **[02_LOW_LEVEL_DESIGN.md](./02_LOW_LEVEL_DESIGN.md)** 📐
+   - Module Structure
+   - API Specifications
+   - Data Models (FHIR, Graph Schema)
+   - Agent Architecture (Librarian, Guardian, Scribe, Scout)
+   - Workflow Engine Design
+   - RAG Pipeline Design
+
+4. **[03_FUNCTIONAL_SPECIFICATION.md](./03_FUNCTIONAL_SPECIFICATION.md)** 📋
+   - Feature List (by Pillar)
+   - Use Cases
+   - User Stories
+   - API Endpoints
+   - Bridge Apps (Oncolife, CKM)
+   - Cowork Workflow
+
+5. **[04_NON_FUNCTIONAL_SPECIFICATION.md](./04_NON_FUNCTIONAL_SPECIFICATION.md)** 📋
+   - Performance Requirements
+   - Security Requirements (HIPAA, PHI)
+   - Scalability Requirements
+   - Reliability Requirements
+   - Compliance Requirements
+
+6. **[05_PLAN_OF_ACTION.md](./05_PLAN_OF_ACTION.md)** 📝 ⭐
+   - **Single source of truth** for current status
+   - Completed features (all 17 tasks)
+   - Known issues & bugs
+   - Technical debt
+   - Next steps (prioritized)
 
 ---
 
-### Tier 2: Implementation & Status
+### Tier 2: Reference Documents
 
-4. **[ARCHITECTURE_REVIEW.md](./ARCHITECTURE_REVIEW.md)**
+7. **[ARCHITECTURE_REVIEW.md](./ARCHITECTURE_REVIEW.md)** 🔄
    - Specification vs Implementation comparison
-   - Completion analysis (~85%)
-   - Gap identification
+   - **100% completion status**
+   - Feature mapping
 
-5. **[COMPLETION_STATUS.md](./COMPLETION_STATUS.md)**
-   - Current implementation status
-   - Completed vs remaining features
+8. **[AEGIS_VS_N8N_KOGO.md](./AEGIS_VS_N8N_KOGO.md)** 📊
+   - Competitive analysis
+   - Feature comparison matrix
+   - Detailed comparison
 
-6. **[COWORK_IMPLEMENTATION_PLAN.md](./COWORK_IMPLEMENTATION_PLAN.md)**
-   - Detailed implementation plan for Options 1 & 2
-   - 17 tasks breakdown
-   - Timeline estimates
-
----
-
-### Tier 3: Feature Documentation
-
-7. **[AGENT_BUILDING_MECHANISM.md](./AGENT_BUILDING_MECHANISM.md)**
+9. **[AGENT_BUILDING_MECHANISM.md](./AGENT_BUILDING_MECHANISM.md)** 📚
    - How to build agents
    - AEGIS vs LangGraph/LangChain/n8n comparison
    - Visual builder guide
 
-8. **[ONCOLIFE_INTEGRATION.md](./ONCOLIFE_INTEGRATION.md)**
-   - Oncolife symptom checker integration
-   - Phase 1 & 2 enhancements
+10. **[MASTER_PLAN.md](./MASTER_PLAN.md)** 📚
+    - Development status by pillar
+    - Roadmap and TODOs
+    - Architecture details
 
-9. **[PHASE1_PHASE2_COMPLETION.md](./PHASE1_PHASE2_COMPLETION.md)**
-   - Oncolife and CKM bridge app completion summary
-
----
-
-### Tier 4: Technical Specifications
-
-10. **[ORCHESTRATION_ENGINE_SPEC.md](./ORCHESTRATION_ENGINE_SPEC.md)**
-    - WorkflowEngine specification
-    - LangGraph integration details
-
-11. **[PLATFORM_ANGLE_REVIEW.md](./PLATFORM_ANGLE_REVIEW.md)**
-    - Platform-first review
-    - Data Moat analysis
-
-12. **[AEGIS_VS_N8N_KOGO.md](./AEGIS_VS_N8N_KOGO.md)**
-    - Competitive analysis
+11. **[ROADMAP.md](./ROADMAP.md)** 📚
+    - Product roadmap
+    - Feature timeline
+    - Strategic direction
 
 ---
 
-### Tier 5: Architecture Decision Records (ADRs)
+### Tier 3: Architecture Decision Records (ADRs)
 
-13. **[adr/001-graph-database-selection.md](./adr/001-graph-database-selection.md)**
-14. **[adr/002-ontology-standards.md](./adr/002-ontology-standards.md)**
-15. **[adr/003-multi-tenancy-strategy.md](./adr/003-multi-tenancy-strategy.md)**
-16. **[adr/004-authentication-approach.md](./adr/004-authentication-approach.md)**
-17. **[adr/005-llm-provider-strategy.md](./adr/005-llm-provider-strategy.md)**
-18. **[adr/006-event-driven-architecture.md](./adr/006-event-driven-architecture.md)**
-19. **[adr/007-api-versioning-strategy.md](./adr/007-api-versioning-strategy.md)**
-
----
-
-### Tier 6: Status & Progress (Reference)
-
-20. **[QUICK_STATUS.md](./QUICK_STATUS.md)** - Quick status snapshot
-21. **[STATUS_REVIEW.md](./STATUS_REVIEW.md)** - Detailed status review
-22. **[COVERAGE_ANALYSIS.md](./COVERAGE_ANALYSIS.md)** - Code coverage analysis
-23. **[IMPLEMENTATION_PROGRESS.md](./IMPLEMENTATION_PROGRESS.md)** - Implementation progress
-24. **[ACTION_PLAN.md](./ACTION_PLAN.md)** - Action items
-25. **[ROADMAP.md](./ROADMAP.md)** - Product roadmap
+12. **[adr/001-graph-database-selection.md](./adr/001-graph-database-selection.md)**
+13. **[adr/002-ontology-standards.md](./adr/002-ontology-standards.md)**
+14. **[adr/003-multi-tenancy-strategy.md](./adr/003-multi-tenancy-strategy.md)**
+15. **[adr/004-authentication-approach.md](./adr/004-authentication-approach.md)**
+16. **[adr/005-llm-provider-strategy.md](./adr/005-llm-provider-strategy.md)**
+17. **[adr/006-event-driven-architecture.md](./adr/006-event-driven-architecture.md)**
+18. **[adr/007-api-versioning-strategy.md](./adr/007-api-versioning-strategy.md)**
 
 ---
 
@@ -104,21 +102,24 @@
 ### For Executives/Investors
 → Start with **[00_PLATFORM_OVERVIEW_VISION.md](./00_PLATFORM_OVERVIEW_VISION.md)**
 
-### For Developers
-→ Start with **[05_MASTER_PLAN.md](./MASTER_PLAN.md)** → **[AGENT_BUILDING_MECHANISM.md](./AGENT_BUILDING_MECHANISM.md)**
-
 ### For Architects
-→ Start with **[ARCHITECTURE_REVIEW.md](./ARCHITECTURE_REVIEW.md)** → **[ORCHESTRATION_ENGINE_SPEC.md](./ORCHESTRATION_ENGINE_SPEC.md)**
+→ Start with **[01_HIGH_LEVEL_DESIGN.md](./01_HIGH_LEVEL_DESIGN.md)** → **[02_LOW_LEVEL_DESIGN.md](./02_LOW_LEVEL_DESIGN.md)**
+
+### For Developers
+→ Start with **[05_PLAN_OF_ACTION.md](./05_PLAN_OF_ACTION.md)** → **[AGENT_BUILDING_MECHANISM.md](./AGENT_BUILDING_MECHANISM.md)** → **[02_LOW_LEVEL_DESIGN.md](./02_LOW_LEVEL_DESIGN.md)**
 
 ### For Product Managers
-→ Start with **[00_PLATFORM_OVERVIEW_VISION.md](./00_PLATFORM_OVERVIEW_VISION.md)** → **[ROADMAP.md](./ROADMAP.md)**
+→ Start with **[00_PLATFORM_OVERVIEW_VISION.md](./00_PLATFORM_OVERVIEW_VISION.md)** → **[03_FUNCTIONAL_SPECIFICATION.md](./03_FUNCTIONAL_SPECIFICATION.md)** → **[ROADMAP.md](./ROADMAP.md)**
+
+### For QA/Testers
+→ Start with **[03_FUNCTIONAL_SPECIFICATION.md](./03_FUNCTIONAL_SPECIFICATION.md)** → **[04_NON_FUNCTIONAL_SPECIFICATION.md](./04_NON_FUNCTIONAL_SPECIFICATION.md)**
 
 ---
 
 ## 📋 DOCUMENTATION PRINCIPLES
 
-1. **Single Source of Truth**: `MASTER_PLAN.md` is the canonical status document
-2. **Structured Hierarchy**: Tier 1 (Core) → Tier 2 (Implementation) → Tier 3+ (Reference)
+1. **Single Source of Truth**: `05_PLAN_OF_ACTION.md` is the canonical status document
+2. **Structured Hierarchy**: Tier 1 (Core) → Tier 2 (Reference) → Tier 3 (ADRs)
 3. **No Duplication**: Each concept documented once, referenced elsewhere
 4. **Living Documents**: Updated as platform evolves
 5. **Clear Navigation**: This index provides clear paths to information
@@ -128,16 +129,32 @@
 ## 🔄 DOCUMENTATION MAINTENANCE
 
 **When to Update**:
-- New feature completed → Update `MASTER_PLAN.md`
-- Architecture change → Update `ARCHITECTURE_REVIEW.md` + create ADR if major
+- New feature completed → Update `05_PLAN_OF_ACTION.md`
+- Architecture change → Update `01_HIGH_LEVEL_DESIGN.md` + create ADR if major
 - New document created → Add to this index
 - Document deprecated → Mark as deprecated, don't delete
 
 **Document Owners**:
 - Platform Overview: Product Team
 - Architecture: Engineering Team
-- Master Plan: Engineering Lead
+- Plan of Action: Engineering Lead
 - ADRs: Architecture Team
+
+---
+
+## 📊 DOCUMENT STATUS
+
+| Document | Status | Last Updated | Owner |
+|----------|--------|--------------|-------|
+| 00_PLATFORM_OVERVIEW_VISION.md | ✅ Current | Feb 6, 2026 | Product |
+| 01_HIGH_LEVEL_DESIGN.md | ✅ Current | Feb 6, 2026 | Architecture |
+| 02_LOW_LEVEL_DESIGN.md | ✅ Current | Feb 6, 2026 | Engineering |
+| 03_FUNCTIONAL_SPECIFICATION.md | ✅ Current | Feb 6, 2026 | Product |
+| 04_NON_FUNCTIONAL_SPECIFICATION.md | ✅ Current | Feb 6, 2026 | Engineering |
+| 05_PLAN_OF_ACTION.md | ✅ Current | Feb 6, 2026 | Engineering Lead |
+| ARCHITECTURE_REVIEW.md | ✅ Current | Feb 6, 2026 | Architecture |
+| AEGIS_VS_N8N_KOGO.md | ✅ Current | Feb 6, 2026 | Product |
+| AGENT_BUILDING_MECHANISM.md | ✅ Current | Feb 6, 2026 | Engineering |
 
 ---
 
