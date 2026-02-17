@@ -86,7 +86,7 @@ class TriageAgent(BaseAgent):
         )
     
     def _get_system_prompt(self) -> str:
-        return """You are the AEGIS Triage Agent, specialized in clinical monitoring
+        return """You are the VeritOS Triage Agent, specialized in clinical monitoring
 and patient safety.
 
 Your responsibilities:

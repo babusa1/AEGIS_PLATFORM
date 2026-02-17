@@ -1,5 +1,5 @@
 """
-AEGIS Orchestrator
+VeritOS Orchestrator
 
 A complete agentic orchestration platform built on top of the Data Moat.
 

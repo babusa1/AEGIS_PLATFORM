@@ -1,18 +1,18 @@
-# AEGIS Agent Building Mechanism: How We're Better Than n8n/LangChain
+# VeritOS Agent Building Mechanism: How We're Better Than n8n/LangChain
 
 ## 🎯 The Question: "How do we build agents? Is our orchestration better than LangGraph/LangChain/n8n?"
 
 ---
 
-## ✅ What We Have: AEGIS Orchestration Engine
+## ✅ What We Have: VeritOS Orchestration Engine
 
 ### Current Architecture
 
-**AEGIS uses LangGraph as the foundation** but builds a **healthcare-native orchestration layer** on top:
+**VeritOS uses LangGraph as the foundation** but builds a **healthcare-native orchestration layer** on top:
 
 ```
 ┌─────────────────────────────────────────┐
-│   AEGIS Orchestration Engine            │
+│   VeritOS Orchestration Engine            │
 │   (Healthcare-Native Layer)            │
 ├─────────────────────────────────────────┤
 │   LangGraph (State Management)          │
@@ -47,7 +47,7 @@
 
 ---
 
-## 🆚 Comparison: AEGIS vs LangGraph/LangChain vs n8n
+## 🆚 Comparison: VeritOS vs LangGraph/LangChain vs n8n
 
 ### 1. **LangGraph/LangChain** (What They Are)
 

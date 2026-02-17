@@ -1,5 +1,5 @@
 """
-AEGIS API Main Application
+VeritOS API Main Application
 
 FastAPI application with REST endpoints and middleware.
 """
@@ -68,7 +68,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     
     # Startup
     logger.info(
-        "Starting AEGIS API",
+        "Starting VeritOS API",
         env=settings.app.env,
         debug=settings.app.debug,
         llm_provider=settings.llm.llm_provider,
@@ -92,14 +92,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     yield
     
     # Shutdown
-    logger.info("Shutting down AEGIS API")
+    logger.info("Shutting down VeritOS API")
     await close_db_clients()
 
 
 # Create FastAPI application
 app = FastAPI(
-    title="AEGIS API",
-    description="The Agentic Operating System for Healthcare",
+    title="VeritOS API",
+    description="The Truth Operating System for Healthcare",
     version="0.1.0",
     lifespan=lifespan,
     docs_url="/docs",
@@ -125,9 +125,9 @@ app.add_middleware(
 async def root():
     """Root endpoint with API information."""
     return {
-        "name": "AEGIS API",
+        "name": "VeritOS API",
         "version": "0.1.0",
-        "description": "The Agentic Operating System for Healthcare",
+        "description": "The Truth Operating System for Healthcare",
         "docs": "/docs",
     }
 

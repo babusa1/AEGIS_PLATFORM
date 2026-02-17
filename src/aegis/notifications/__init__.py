@@ -1,5 +1,5 @@
 """
-AEGIS Notifications Module
+VeritOS Notifications Module
 
 Alert and notification delivery:
 - Slack webhooks

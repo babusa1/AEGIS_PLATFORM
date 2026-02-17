@@ -1,7 +1,7 @@
 """
-AEGIS Voice Module
+VeritOS Voice Module
 
-Voice-based patient interaction layer built on top of AEGIS platform.
+Voice-based patient interaction layer built on top of VeritOS platform.
 Provides ROVA-like capabilities for voice-based healthcare assistance.
 
 Components:

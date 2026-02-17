@@ -1,5 +1,5 @@
 """
-AEGIS Security Module
+VeritOS Security Module
 
 Healthcare security and compliance:
 - PHI Detection and Redaction

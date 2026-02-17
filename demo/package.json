@@ -2,7 +2,7 @@
   "name": "aegis-demo",
   "version": "0.1.0",
   "private": true,
-  "description": "AEGIS Demo Dashboard - The Agentic Operating System for Healthcare",
+  "description": "VeritOS Demo Dashboard - The Truth Operating System for Healthcare",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

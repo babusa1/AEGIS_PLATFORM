@@ -19,7 +19,7 @@ export function Header() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
             type="text"
-            placeholder="Search patients, claims, or ask AEGIS..."
+            placeholder="Search patients, claims, or ask VeritOS..."
             className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-aegis-primary/20 focus:border-aegis-primary"
           />
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -38,7 +38,7 @@ export function Header() {
           className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-aegis-primary to-aegis-secondary text-white rounded-lg hover:opacity-90 transition-opacity"
         >
           <Sparkles className="w-4 h-4" />
-          <span className="text-sm font-medium">Ask AEGIS</span>
+          <span className="text-sm font-medium">Ask VeritOS</span>
         </button>
 
         {/* Notifications */}

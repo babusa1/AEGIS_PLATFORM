@@ -161,11 +161,11 @@ class ObservabilityDashboard:
         self._init_default_alerts()
     
     def _init_default_dashboard(self):
-        """Initialize the default AEGIS dashboard."""
+        """Initialize the default VeritOS dashboard."""
         self._dashboards["aegis-main"] = DashboardConfig(
             id="aegis-main",
-            name="AEGIS Orchestration Dashboard",
-            description="Main monitoring dashboard for AEGIS",
+            name="VeritOS Orchestration Dashboard",
+            description="Main monitoring dashboard for VeritOS",
             panels=[
                 DashboardPanel(
                     id="active-workflows",

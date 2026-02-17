@@ -1,6 +1,6 @@
-# AEGIS vs n8n vs Kogo.AI: Comparison
+# VeritOS vs n8n vs Kogo.AI: Comparison
 
-**Comprehensive comparison of AEGIS agentic framework against leading workflow automation platforms.**
+**Comprehensive comparison of VeritOS agentic framework against leading workflow automation platforms.**
 
 ---
 
@@ -8,7 +8,7 @@
 
 | Platform | Focus | Strengths | Weaknesses |
 |----------|-------|-----------|------------|
-| **AEGIS** | Healthcare-native agentic OS | Data Moat, therapeutic agents, multi-agent, HITL | Newer platform, smaller ecosystem |
+| **VeritOS** | Healthcare-native agentic OS | Data Moat, therapeutic agents, multi-agent, HITL | Newer platform, smaller ecosystem |
 | **n8n** | General workflow automation | 400+ integrations, visual builder, large community | No healthcare focus, limited multi-agent |
 | **Kogo.AI** | AI agent platform | Agent persistence, tracing, complex workflows | Limited healthcare, proprietary |
 
@@ -16,7 +16,7 @@
 
 ## Feature Comparison Matrix
 
-| Feature | AEGIS | n8n | Kogo.AI |
+| Feature | VeritOS | n8n | Kogo.AI |
 |---------|-------|-----|---------|
 | **Visual Builder** | ✅ React Flow | ✅ Custom | ⚠️ Limited |
 | **Drag & Drop** | ✅ | ✅ | ⚠️ |

@@ -57,14 +57,14 @@ api:
     targetMemoryUtilizationPercentage: 80
   
   env:
-    AEGIS_ENV: production
-    AEGIS_DEBUG: "false"
-    AEGIS_LOG_LEVEL: INFO
+    VERITOS_ENV: production
+    VERITOS_DEBUG: "false"
+    VERITOS_LOG_LEVEL: INFO
     LLM_PROVIDER: bedrock
   
   # Sensitive values - use secrets
   secretEnv:
-    - name: AEGIS_SECRET_KEY
+    - name: VERITOS_SECRET_KEY
       secretName: aegis-secrets
       secretKey: secret-key
     - name: JWT_SECRET_KEY

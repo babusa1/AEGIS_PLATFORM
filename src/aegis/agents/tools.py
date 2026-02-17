@@ -1,7 +1,7 @@
 """
 Agent Tools
 
-Tools available to AEGIS agents for interacting with the knowledge graph,
+Tools available to VeritOS agents for interacting with the knowledge graph,
 vector search, and performing calculations.
 """
 

@@ -6,14 +6,14 @@ metadata:
     {{- include "aegis.labels" . | nindent 4 }}
 data:
   # Application configuration
-  AEGIS_ENV: {{ .Values.api.env.AEGIS_ENV | default "production" | quote }}
-  AEGIS_DEBUG: {{ .Values.api.env.AEGIS_DEBUG | default "false" | quote }}
-  AEGIS_LOG_LEVEL: {{ .Values.api.env.AEGIS_LOG_LEVEL | default "INFO" | quote }}
+  VERITOS_ENV: {{ .Values.api.env.VERITOS_ENV | default "production" | quote }}
+  VERITOS_DEBUG: {{ .Values.api.env.VERITOS_DEBUG | default "false" | quote }}
+  VERITOS_LOG_LEVEL: {{ .Values.api.env.VERITOS_LOG_LEVEL | default "INFO" | quote }}
   
   # API settings
-  AEGIS_API_HOST: "0.0.0.0"
-  AEGIS_API_PORT: "8000"
-  AEGIS_API_WORKERS: "4"
+  VERITOS_API_HOST: "0.0.0.0"
+  VERITOS_API_PORT: "8000"
+  VERITOS_API_WORKERS: "4"
   
   # Database settings
   POSTGRES_HOST: {{ include "aegis.fullname" . }}-postgresql

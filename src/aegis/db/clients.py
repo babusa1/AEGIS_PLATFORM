@@ -1,5 +1,5 @@
 """
-AEGIS Database Clients
+VeritOS Database Clients
 
 Manages connections to all databases:
 - PostgreSQL/TimescaleDB

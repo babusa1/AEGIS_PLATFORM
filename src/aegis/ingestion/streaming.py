@@ -1,5 +1,5 @@
 """
-AEGIS Streaming Ingestion Service
+VeritOS Streaming Ingestion Service
 
 Real-time data ingestion via Kafka with:
 - Background consumers for FHIR, HL7v2, X12

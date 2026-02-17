@@ -1,5 +1,5 @@
 """
-AEGIS Configuration Module
+VeritOS Configuration Module
 
 Centralized configuration management using Pydantic Settings.
 Supports environment variables and .env files.
@@ -12,11 +12,11 @@ from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class AegisSettings(BaseSettings):
+class VeritOSSettings(BaseSettings):
     """Main application settings."""
     
     model_config = SettingsConfigDict(
-        env_prefix="AEGIS_",
+        env_prefix="VERITOS_",
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
@@ -74,8 +74,8 @@ class OpenSearchSettings(BaseSettings):
     password: SecretStr = Field(default=SecretStr("admin"))
     
     # Index names
-    vector_index: str = "aegis-vectors"
-    documents_index: str = "aegis-documents"
+    vector_index: str = "veritos-vectors"
+    documents_index: str = "veritos-documents"
     
     @property
     def connection_url(self) -> str:
@@ -141,13 +141,13 @@ class KafkaSettings(BaseSettings):
     )
     
     bootstrap_servers: str = "localhost:9092"
-    consumer_group: str = "aegis-consumers"
+    consumer_group: str = "veritos-consumers"
     
     # Topic names
-    fhir_ingest_topic: str = "aegis.ingest.fhir"
-    hl7_ingest_topic: str = "aegis.ingest.hl7"
-    events_topic: str = "aegis.events"
-    agent_actions_topic: str = "aegis.agent.actions"
+    fhir_ingest_topic: str = "veritos.ingest.fhir"
+    hl7_ingest_topic: str = "veritos.ingest.hl7"
+    events_topic: str = "veritos.events"
+    agent_actions_topic: str = "veritos.agent.actions"
 
 
 class DynamoDBSettings(BaseSettings):
@@ -161,7 +161,7 @@ class DynamoDBSettings(BaseSettings):
     
     region: str = "us-east-1"
     endpoint_url: str | None = None  # For local development (e.g., http://localhost:8000)
-    table_prefix: str = "aegis"
+    table_prefix: str = "veritos"
     
     # AWS credentials (optional, can use IAM roles)
     aws_access_key_id: str | None = None
@@ -248,7 +248,7 @@ class Settings:
     """
     
     def __init__(self):
-        self.app = AegisSettings()
+        self.app = VeritOSSettings()
         self.graph_db = GraphDBSettings()
         self.postgres = PostgresSettings()
         self.redis = RedisSettings()

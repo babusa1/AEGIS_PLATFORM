@@ -1,14 +1,14 @@
-# AEGIS: The Agentic Operating System for Healthcare
+# VeritOS: The Truth Operating System for Healthcare
 
 > **From Data Rich to Action Ready**
 
-AEGIS is a healthcare data platform that transforms passive hospital data into autonomous action through AI agents and a unified knowledge graph.
+VeritOS is a healthcare data platform that transforms passive hospital data into autonomous action through AI agents and a unified knowledge graph.
 
 ## Architecture Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        AEGIS Platform                            │
+│                        VeritOS Platform                            │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │

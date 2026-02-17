@@ -1,5 +1,5 @@
 """
-AEGIS LLM Module
+VeritOS LLM Module
 
 Multi-provider LLM support:
 - AWS Bedrock (Claude, Llama, Titan)

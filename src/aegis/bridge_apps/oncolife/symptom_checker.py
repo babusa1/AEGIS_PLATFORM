@@ -1,7 +1,7 @@
 """
 Oncolife Symptom Checker Service
 
-Wraps the symptom checker engine from Oncolife repo and integrates with AEGIS.
+Wraps the symptom checker engine from Oncolife repo and integrates with VeritOS.
 """
 
 from typing import Dict, Any, Optional, List
@@ -10,7 +10,7 @@ from pathlib import Path
 
 logger = structlog.get_logger(__name__)
 
-# Import from local files (copied into AEGIS)
+# Import from local files (copied into VeritOS)
 try:
     from .symptom_engine import SymptomCheckerEngine, ConversationState
     from .constants import TriageLevel
@@ -59,7 +59,7 @@ class SymptomCheckerService:
     Service wrapper for Oncolife symptom checker.
     
     Integrates with:
-    - AEGIS Data Moat (patient data)
+    - VeritOS Data Moat (patient data)
     - OncolifeAgent (care recommendations)
     - Patient timeline (symptom history)
     """

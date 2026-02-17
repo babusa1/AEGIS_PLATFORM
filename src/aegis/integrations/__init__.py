@@ -1,5 +1,5 @@
 """
-AEGIS Healthcare Integrations
+VeritOS Healthcare Integrations
 
 Industry-standard healthcare integrations:
 - Epic FHIR R4

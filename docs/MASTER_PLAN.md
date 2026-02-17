@@ -1,10 +1,10 @@
-# AEGIS Master Working Plan
+# VeritOS Master Working Plan
 
 **Last Updated**: February 6, 2026  
 **Status**: 🟢 Active Development  
 **Version**: 2.0
 
-> **This is the single source of truth for AEGIS development. All other docs reference this.**
+> **This is the single source of truth for VeritOS development. All other docs reference this.**
 
 ---
 
@@ -28,7 +28,7 @@
 
 ---
 
-## 🏗️ AEGIS ARCHITECTURE (5 Pillars)
+## 🏗️ VeritOS ARCHITECTURE (5 Pillars)
 
 ### Pillar 1: The Data Moat (Sovereign Clinical Data Layer)
 

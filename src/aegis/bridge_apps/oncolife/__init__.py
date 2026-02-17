@@ -1,7 +1,7 @@
 """
 Oncolife Bridge App - Oncology Symptom Checker & Care Management
 
-Integrates the Oncolife symptom checker engine with AEGIS Data Moat and Agentic Framework.
+Integrates the Oncolife symptom checker engine with VeritOS Data Moat and Agentic Framework.
 
 The symptom checker provides:
 - Rule-based symptom triage (27 symptom modules)

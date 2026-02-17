@@ -5,7 +5,7 @@ Implements HL7 CDS Hooks 2.0 specification for real-time clinical decision suppo
 within Epic and other EHR systems.
 
 Hooks supported:
-- patient-view: When patient chart is opened (enhanced with AEGIS agents)
+- patient-view: When patient chart is opened (enhanced with VeritOS agents)
 - order-select: When orders are being selected (enhanced with denial prediction)
 - order-sign: Before orders are signed (enhanced with prior auth checks)
 - encounter-start: When encounter begins (enhanced with care gap analysis)
@@ -141,11 +141,11 @@ class CDSServiceDefinition(BaseModel):
     usageRequirements: Optional[str] = None
 
 
-AEGIS_CDS_SERVICES = [
+VERITOS_CDS_SERVICES = [
     CDSServiceDefinition(
         id="aegis-risk-assessment",
         hook="patient-view",
-        title="AEGIS Patient Risk Assessment",
+        title="VeritOS Patient Risk Assessment",
         description="Real-time patient risk scoring and clinical alerts",
         prefetch={
             "patient": "Patient/{{context.patientId}}",
@@ -157,7 +157,7 @@ AEGIS_CDS_SERVICES = [
     CDSServiceDefinition(
         id="aegis-denial-prediction",
         hook="order-sign",
-        title="AEGIS Denial Risk Prediction",
+        title="VeritOS Denial Risk Prediction",
         description="Predict claim denial risk before orders are signed",
         prefetch={
             "patient": "Patient/{{context.patientId}}",
@@ -167,7 +167,7 @@ AEGIS_CDS_SERVICES = [
     CDSServiceDefinition(
         id="aegis-care-gaps",
         hook="patient-view",
-        title="AEGIS Care Gap Detection",
+        title="VeritOS Care Gap Detection",
         description="Identify missing preventive care and quality measures",
         prefetch={
             "patient": "Patient/{{context.patientId}}",
@@ -178,7 +178,7 @@ AEGIS_CDS_SERVICES = [
     CDSServiceDefinition(
         id="aegis-encounter-discharge",
         hook="encounter-discharge",
-        title="AEGIS Discharge Optimization",
+        title="VeritOS Discharge Optimization",
         description="Readmission risk and discharge recommendations",
         prefetch={
             "patient": "Patient/{{context.patientId}}",
@@ -203,18 +203,18 @@ class CDSHooksService:
     def __init__(self, pool=None, ml_predictor=None, agent_registry=None):
         self.pool = pool
         self.ml_predictor = ml_predictor
-        self.agent_registry = agent_registry  # Registry of AEGIS agents (Oncolife, Chaperone CKM, etc.)
+        self.agent_registry = agent_registry  # Registry of VeritOS agents (Oncolife, Chaperone CKM, etc.)
         
-        # AEGIS source info
+        # VeritOS source info
         self.source = CDSSource(
-            label="AEGIS Healthcare Intelligence",
+            label="VeritOS Healthcare Intelligence",
             url="https://aegis-platform.com",
             icon="https://aegis-platform.com/icon.png",
         )
     
     def get_services(self) -> List[CDSServiceDefinition]:
         """Return service discovery response."""
-        return AEGIS_CDS_SERVICES
+        return VERITOS_CDS_SERVICES
     
     async def process_hook(self, request: CDSRequest) -> CDSResponse:
         """Process incoming CDS hook request."""
@@ -245,7 +245,7 @@ class CDSHooksService:
             logger.error(f"CDS hook processing error: {e}")
             return CDSResponse(cards=[
                 CDSCard(
-                    summary="AEGIS service temporarily unavailable",
+                    summary="VeritOS service temporarily unavailable",
                     indicator="info",
                     source=self.source,
                 )
@@ -255,7 +255,7 @@ class CDSHooksService:
         """
         Handle patient-view hook - show risk assessment when chart opens.
         
-        Enhanced with AEGIS agents:
+        Enhanced with VeritOS agents:
         - OncolifeAgent for oncology patients
         - ChaperoneCKMAgent for CKD patients
         - TriageAgent for general risk assessment

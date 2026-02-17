@@ -1,16 +1,16 @@
-# AEGIS Platform: Overview & Vision
+# VeritOS Platform: Overview & Vision
 
 **Version**: 2.0  
 **Last Updated**: February 6, 2026  
 **Status**: Production-Ready (~90% Complete)
 
-> **"Palantir for Healthcare"** - The Agentic Operating System that orchestrates the EHR
+> **"Palantir for Healthcare"** - The Truth Operating System that orchestrates the EHR
 
 ---
 
 ## 🎯 EXECUTIVE SUMMARY
 
-**AEGIS (Autonomous Evidence-based Guardian & Interoperability System)** is the **Agentic Operating System for Healthcare**—a composable health OS that orchestrates the EHR rather than replacing it.
+**VeritOS (Truth Operating System)** is the **Agentic Operating System for Healthcare**—a composable health OS that orchestrates the EHR rather than replacing it.
 
 ### The Problem We Solve
 
@@ -22,7 +22,7 @@ Healthcare is **"Data Rich, Insight Poor"**:
 
 ### Our Solution
 
-AEGIS provides:
+VeritOS provides:
 1. **The Data Moat**: Unified clinical data layer (30+ entity types, 7 databases)
 2. **The Agentic Framework**: Autonomous agents that collaborate like a clinical team
 3. **Clinical RAG**: Grounded AI that cites sources and prevents hallucinations
@@ -188,7 +188,7 @@ For 20-year patient histories:
 
 ### Vertical Intelligence
 
-Bridge apps are specialized interfaces for specific disease states, built on top of AEGIS OS.
+Bridge apps are specialized interfaces for specific disease states, built on top of VeritOS.
 
 **OncoLife (Oncology Guardian)**
 - Data-aware symptom checker (loads patient context)
@@ -237,16 +237,16 @@ Every recommendation includes:
 
 ### vs. Palantir
 
-| Feature | Palantir | AEGIS |
-|---------|----------|-------|
+| Feature | Palantir | VeritOS |
+|---------|----------|---------|
 | Data Model | Flat tables | FHIR-native property graph |
 | AI | Human must interpret graphs | Autonomous agents act on insights |
 | Healthcare | Generic platform | Healthcare-native (30+ clinical entities) |
 
 ### vs. n8n/Kogo.AI
 
-| Feature | n8n/Kogo | AEGIS |
-|---------|----------|-------|
+| Feature | n8n/Kogo | VeritOS |
+|---------|----------|---------|
 | Data Layer | None (bring your own) | 30+ healthcare entities pre-integrated |
 | Agents | Generic | Therapeutic-specific (Oncolife, CKM) |
 | State Management | Basic | LangGraph with checkpointing |
@@ -254,8 +254,8 @@ Every recommendation includes:
 
 ### vs. Traditional EHR Add-ons
 
-| Feature | Traditional | AEGIS |
-|---------|-------------|-------|
+| Feature | Traditional | VeritOS |
+|---------|-------------|---------|
 | Integration | Point-to-point | Unified Data Moat |
 | AI | Chatbot | Multi-agent orchestration |
 | Data Sources | EHR only | 30+ sources (EHR, claims, wearables, genomics) |
@@ -309,7 +309,7 @@ Every recommendation includes:
 
 ---
 
-## 🏆 WHY AEGIS WINS
+## 🏆 WHY VeritOS WINS
 
 1. **Data Moat**: 30+ sources unified into one API—competitors can't replicate this network effect
 2. **Healthcare-Native**: Built for healthcare, not adapted from generic platforms
@@ -321,7 +321,7 @@ Every recommendation includes:
 
 ## 📚 DOCUMENTATION STRUCTURE
 
-This document is part of the **AEGIS Documentation System**:
+This document is part of the **VeritOS Documentation System**:
 
 - **00_PLATFORM_OVERVIEW_VISION.md** (This document) - Platform vision and overview
 - **05_MASTER_PLAN.md** - Single source of truth for development status
@@ -332,4 +332,4 @@ See `docs/README.md` for complete navigation.
 ---
 
 **Last Updated**: February 6, 2026  
-**Maintained By**: AEGIS Platform Team
+**Maintained By**: VeritOS Platform Team

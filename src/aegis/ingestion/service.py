@@ -1,7 +1,7 @@
 """
 Data Ingestion Service
 
-High-level service for ingesting healthcare data into AEGIS.
+High-level service for ingesting healthcare data into VeritOS.
 Orchestrates parsing, validation, and graph writing.
 """
 
@@ -20,7 +20,7 @@ logger = structlog.get_logger(__name__)
 
 class IngestionService:
     """
-    Service for ingesting healthcare data into AEGIS.
+    Service for ingesting healthcare data into VeritOS.
     
     Supports multiple data formats:
     - FHIR R4 Bundles

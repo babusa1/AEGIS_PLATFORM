@@ -43,7 +43,7 @@ export function Sidebar() {
             <Shield className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-xl font-bold">AEGIS</h1>
+            <h1 className="text-xl font-bold">VeritOS</h1>
             <p className="text-xs text-gray-400">Healthcare Intelligence</p>
           </div>
         </div>

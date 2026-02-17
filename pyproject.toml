@@ -5,12 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "aegis"
 version = "0.1.0"
-description = "AEGIS: The Agentic Operating System for Healthcare"
+description = "VeritOS: The Truth Operating System for Healthcare"
 readme = "README.md"
 license = {text = "Proprietary"}
 requires-python = ">=3.11"
 authors = [
-    {name = "AEGIS Team"}
+    {name = "VeritOS Team"}
 ]
 keywords = ["healthcare", "ai", "agents", "knowledge-graph", "fhir", "hl7"]
 classifiers = [
@@ -82,7 +82,7 @@ dev = [
 ]
 
 [project.scripts]
-aegis = "aegis.cli:main"
+veritos = "aegis.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -1,7 +1,7 @@
 """
 Agent Routes
 
-Endpoints for invoking AEGIS AI agents.
+Endpoints for invoking VeritOS AI agents.
 """
 
 from typing import Any, Literal
@@ -102,7 +102,7 @@ async def invoke_agent(
         llm_client = get_llm_client()
         
         # Build prompt with context
-        system_prompt = """You are AEGIS, an AI assistant for healthcare operations.
+        system_prompt = """You are VeritOS, an AI assistant for healthcare operations.
 You have access to a knowledge graph containing patient, encounter, claim, and denial data.
 Help users understand their healthcare data and take action on operational issues.
 Always be precise and cite specific data when possible."""

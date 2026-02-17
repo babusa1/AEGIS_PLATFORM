@@ -1,7 +1,7 @@
 """
 Authentication Module
 
-JWT-based authentication for the AEGIS API.
+JWT-based authentication for the VeritOS API.
 Supports local JWT and AWS Cognito.
 """
 
@@ -83,7 +83,7 @@ DEMO_USERS = {
         "password_hash": _hash_password("admin123"),
         "tenant_id": "default",
         "roles": ["admin", "user"],
-        "full_name": "AEGIS Admin",
+        "full_name": "VeritOS Admin",
     },
     "user@aegis.health": {
         "id": "user-002",
@@ -241,7 +241,7 @@ async def get_current_user(
             email="admin@aegis.health",
             tenant_id="default",
             roles=["admin", "user"],
-            full_name="AEGIS Admin (Dev Mode)",
+            full_name="VeritOS Admin (Dev Mode)",
         )
     
     if bearer is None:

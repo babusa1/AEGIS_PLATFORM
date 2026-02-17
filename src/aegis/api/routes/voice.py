@@ -176,7 +176,7 @@ async def handle_inbound_call_webhook(
         # Create IVR menu
         menu = gateway.create_ivr_menu(
             menu_id="main_menu",
-            greeting="Welcome to AEGIS Healthcare. Press 1 for appointments, press 2 for questions, press 3 for insurance.",
+            greeting="Welcome to VeritOS Healthcare. Press 1 for appointments, press 2 for questions, press 3 for insurance.",
             options=[
                 {"digit": "1", "label": "appointments", "action": "appointment"},
                 {"digit": "2", "label": "questions", "action": "query"},

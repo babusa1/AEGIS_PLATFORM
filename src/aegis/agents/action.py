@@ -59,7 +59,7 @@ class ActionAgent(BaseAgent):
         )
     
     def _get_system_prompt(self) -> str:
-        return """You are the AEGIS Action Agent, specialized in healthcare 
+        return """You are the VeritOS Action Agent, specialized in healthcare 
 revenue cycle operations and denial management.
 
 Your primary function is to generate effective denial appeal letters that:

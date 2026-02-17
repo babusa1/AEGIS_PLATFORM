@@ -19,7 +19,7 @@ The Voice Module enables voice-based patient interactions through:
 ✅ **Follow-Up Calls**: Automated reminder and check-in calls  
 ✅ **Insurance Checks**: Voice-based eligibility inquiries  
 ✅ **Multilingual**: Support for multiple languages  
-✅ **Integration**: Leverages existing AEGIS agents and Data Moat  
+✅ **Integration**: Leverages existing VeritOS agents and Data Moat  
 
 ## Architecture
 
@@ -50,7 +50,7 @@ The Voice Module enables voice-based patient interactions through:
                │
                ▼
 ┌─────────────────────────────────────────┐
-│   AEGIS Platform (Existing)              │
+│   VeritOS Platform (Existing)              │
 │   • LLM Gateway                          │
 │   • UnifiedViewAgent                     │
 │   • Data Moat                            │

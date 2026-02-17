@@ -1,5 +1,5 @@
 """
-AEGIS RAG (Retrieval Augmented Generation) Pipeline
+VeritOS RAG (Retrieval Augmented Generation) Pipeline
 
 Complete RAG system for healthcare:
 - Document ingestion (PDF, DOCX, clinical notes, policies)

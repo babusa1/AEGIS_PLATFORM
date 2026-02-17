@@ -1,5 +1,5 @@
 """
-AEGIS Database Backup Utilities
+VeritOS Database Backup Utilities
 
 Unified backup/restore operations for all data stores:
 - PostgreSQL/TimescaleDB

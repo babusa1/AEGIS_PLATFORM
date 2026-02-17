@@ -1,6 +1,6 @@
-# AEGIS Local Testing Guide
+# VeritOS Local Testing Guide
 
-**Complete guide to testing AEGIS locally with all services.**
+**Complete guide to testing VeritOS locally with all services.**
 
 ---
 

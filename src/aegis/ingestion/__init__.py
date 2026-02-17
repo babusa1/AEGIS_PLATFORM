@@ -1,5 +1,5 @@
 """
-AEGIS Data Ingestion Module
+VeritOS Data Ingestion Module
 
 Parsers and writers for healthcare data standards:
 - FHIR R4

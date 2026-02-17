@@ -1,7 +1,7 @@
-# AEGIS Documentation Index
+# VeritOS Documentation Index
 
 **Last Updated**: February 6, 2026  
-**Purpose**: Central navigation for all AEGIS documentation
+**Purpose**: Central navigation for all VeritOS documentation
 
 ---
 
@@ -70,7 +70,7 @@
 
 9. **[AGENT_BUILDING_MECHANISM.md](./AGENT_BUILDING_MECHANISM.md)** 📚
    - How to build agents
-   - AEGIS vs LangGraph/LangChain/n8n comparison
+   - VeritOS vs LangGraph/LangChain/n8n comparison
    - Visual builder guide
 
 10. **[MASTER_PLAN.md](./MASTER_PLAN.md)** 📚

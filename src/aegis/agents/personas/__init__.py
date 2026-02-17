@@ -1,7 +1,7 @@
 """
 Agent Personas
 
-Explicit agent personas matching the AEGIS specification:
+Explicit agent personas matching the VeritOS specification:
 - LibrarianAgent: Contextual retrieval (GraphRAG, temporal delta, recursive summarization)
 - GuardianAgent: Governance & safety (guideline cross-check, conflict detection)
 - ScribeAgent: Action execution (SOAP notes, referral letters, prior auth)

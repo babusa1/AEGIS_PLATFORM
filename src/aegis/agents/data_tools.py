@@ -1,7 +1,7 @@
 """
 Data Moat Tools
 
-Tools that leverage the AEGIS Data Moat - unified access to:
+Tools that leverage the VeritOS Data Moat - unified access to:
 - PostgreSQL (relational clinical data)
 - TimescaleDB (time-series vitals/labs)
 - Graph Database (relationships)
@@ -27,7 +27,7 @@ logger = structlog.get_logger(__name__)
 
 class DataMoatTools:
     """
-    Tools for accessing the AEGIS Data Moat.
+    Tools for accessing the VeritOS Data Moat.
     
     The Data Moat is the unified healthcare data layer consisting of:
     1. PostgreSQL - Patient demographics, conditions, medications, claims, denials

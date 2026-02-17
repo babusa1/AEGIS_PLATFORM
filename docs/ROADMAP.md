@@ -1,4 +1,4 @@
-# AEGIS Platform Roadmap - What's Next?
+# VeritOS Platform Roadmap - What's Next?
 
 **Last Updated**: February 6, 2026
 

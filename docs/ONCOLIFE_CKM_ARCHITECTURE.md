@@ -9,7 +9,7 @@
   - Symptom checker engine (27 symptom modules, rule-based triage)
   - API endpoints (`/bridge/oncolife/symptom-checker/*`)
   - Basic integration with `OncolifeAgent` after symptom session completes
-  - **Gap**: Symptom checker doesn't use patient data from AEGIS Data Moat during the conversation
+  - **Gap**: Symptom checker doesn't use patient data from VeritOS Data Moat during the conversation
 
 ### Chaperone CKM
 - **Status**: ✅ Agent implemented
