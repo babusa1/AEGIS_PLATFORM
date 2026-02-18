@@ -125,11 +125,55 @@ app.add_middleware(
     max_age=3600,
 )
 
-# Additional CORS handler for preflight requests
+# Handle OPTIONS preflight requests
+@app.options("/{full_path:path}")
+async def options_handler(request: Request, full_path: str):
+    """Handle CORS preflight OPTIONS requests."""
+    origin = request.headers.get("origin")
+    allowed_origins = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+    ]
+    
+    headers = {}
+    if origin in allowed_origins:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+        headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        headers["Access-Control-Allow-Headers"] = "*"
+        headers["Access-Control-Max-Age"] = "3600"
+    
+    return Response(status_code=200, headers=headers)
+
+# Additional CORS handler for all responses (including errors)
 @app.middleware("http")
 async def add_cors_header(request: Request, call_next):
-    """Add CORS headers to all responses."""
-    response = await call_next(request)
+    """Add CORS headers to all responses, including error responses."""
+    try:
+        response = await call_next(request)
+    except Exception as e:
+        # If an exception occurs, create a response with CORS headers
+        origin = request.headers.get("origin")
+        allowed_origins = [
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:3001",
+        ]
+        
+        headers = {}
+        if origin in allowed_origins:
+            headers["Access-Control-Allow-Origin"] = origin
+            headers["Access-Control-Allow-Credentials"] = "true"
+            headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+            headers["Access-Control-Allow-Headers"] = "*"
+            headers["Access-Control-Expose-Headers"] = "*"
+        
+        # Re-raise to let the exception handler deal with it
+        # But ensure CORS headers are added
+        raise
     
     origin = request.headers.get("origin")
     allowed_origins = [
@@ -334,9 +378,34 @@ async def liveness_check():
 # Error Handlers
 # =============================================================================
 
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """HTTP exception handler with CORS headers."""
+    origin = request.headers.get("origin")
+    allowed_origins = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+    ]
+    
+    headers = dict(exc.headers) if exc.headers else {}
+    if origin in allowed_origins:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+        headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        headers["Access-Control-Allow-Headers"] = "*"
+        headers["Access-Control-Expose-Headers"] = "*"
+    
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+        headers=headers,
+    )
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    """Global exception handler for unhandled errors."""
+    """Global exception handler for unhandled errors with CORS headers."""
     logger.error(
         "Unhandled exception",
         path=request.url.path,
@@ -344,6 +413,24 @@ async def global_exception_handler(request: Request, exc: Exception):
         error=str(exc),
         exc_info=True,
     )
+    
+    # Add CORS headers to error response
+    origin = request.headers.get("origin")
+    allowed_origins = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+    ]
+    
+    headers = {}
+    if origin in allowed_origins:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+        headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        headers["Access-Control-Allow-Headers"] = "*"
+        headers["Access-Control-Expose-Headers"] = "*"
+    
     return JSONResponse(
         status_code=500,
         content={
@@ -351,6 +438,7 @@ async def global_exception_handler(request: Request, exc: Exception):
             "message": "An unexpected error occurred",
             "detail": str(exc) if get_settings().app.debug else None,
         },
+        headers=headers,
     )
 
 

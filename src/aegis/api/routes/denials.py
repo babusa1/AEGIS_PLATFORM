@@ -93,7 +93,7 @@ async def list_denials(
     status: str | None = Query(None, description="Filter by appeal status"),
     priority: str | None = Query(None, description="Filter by priority"),
     category: str | None = Query(None, description="Filter by denial category"),
-    current_user: User = Depends(get_current_user),
+    current_user: User | None = Depends(get_current_user),
 ):
     """
     List denials with filtering and pagination.
