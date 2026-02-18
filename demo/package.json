@@ -4,7 +4,7 @@
   "private": true,
   "description": "VeritOS Demo Dashboard - The Truth Operating System for Healthcare",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

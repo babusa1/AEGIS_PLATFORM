@@ -24,6 +24,7 @@ const navigation = [
   { name: 'Denials', href: '/denials', icon: AlertCircle },
   { name: 'AI Agents', href: '/agents', icon: Bot },
   { name: 'Analytics', href: '/intelligence', icon: BarChart3 },
+  { name: 'Data Moat', href: '/data-moat', icon: Database },
   { name: 'Data Ingestion', href: '/ingestion', icon: Database },
 ]
 

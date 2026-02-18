@@ -164,7 +164,7 @@ export default function AgentsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Brain className="w-7 h-7 text-purple-600" />
-            AEGIS AI Agents
+            VeritOS AI Agents
           </h1>
           <p className="text-gray-500 mt-1">
             LangGraph-powered agents orchestrating across the Data Moat
@@ -193,9 +193,9 @@ export default function AgentsPage() {
 
       {/* Loading State */}
       {statusLoading && !agentStatus && (
-        <div className="bg-white rounded-lg shadow p-6 flex items-center justify-center gap-3">
+          <div className="bg-white rounded-lg shadow p-6 flex items-center justify-center gap-3">
           <Loader2 className="w-6 h-6 animate-spin text-purple-600" />
-          <span className="text-gray-600">Connecting to AEGIS API...</span>
+          <span className="text-gray-600">Connecting to VeritOS API...</span>
         </div>
       )}
 
@@ -447,7 +447,7 @@ export default function AgentsPage() {
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow p-6 text-white">
             <h3 className="text-xl font-bold flex items-center gap-2">
               <Shield className="w-6 h-6" />
-              The AEGIS Data Moat
+              The VeritOS Data Moat
             </h3>
             <p className="mt-2 opacity-90">{dataMoatInfo.description}</p>
           </div>

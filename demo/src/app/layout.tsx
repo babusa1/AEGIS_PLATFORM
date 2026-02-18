@@ -7,8 +7,8 @@ import { Header } from '@/components/layout/Header'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'AEGIS - Healthcare Intelligence Platform',
-  description: 'The Agentic Operating System for Healthcare',
+  title: 'VeritOS - Healthcare Intelligence Platform',
+  description: 'The Truth Operating System for Healthcare',
 }
 
 export default function RootLayout({
