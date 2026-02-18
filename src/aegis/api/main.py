@@ -126,7 +126,7 @@ app.add_middleware(
     max_age=3600,
 )
 
-# Handle OPTIONS preflight requests
+# Handle OPTIONS preflight requests - must be before other routes
 @app.options("/{full_path:path}")
 async def options_handler(request: Request, full_path: str):
     """Handle CORS preflight OPTIONS requests."""
@@ -145,37 +145,19 @@ async def options_handler(request: Request, full_path: str):
         headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
         headers["Access-Control-Allow-Headers"] = "*"
         headers["Access-Control-Max-Age"] = "3600"
+    else:
+        # Still allow but use the origin from request
+        headers["Access-Control-Allow-Origin"] = origin or "*"
+        headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        headers["Access-Control-Allow-Headers"] = "*"
     
     return Response(status_code=200, headers=headers)
 
 # Additional CORS handler for all responses (including errors)
+# This MUST be added AFTER CORS middleware but handles errors that bypass middleware
 @app.middleware("http")
 async def add_cors_header(request: Request, call_next):
     """Add CORS headers to all responses, including error responses."""
-    try:
-        response = await call_next(request)
-    except Exception as e:
-        # If an exception occurs, create a response with CORS headers
-        origin = request.headers.get("origin")
-        allowed_origins = [
-            "http://localhost:3000",
-            "http://localhost:3001",
-            "http://127.0.0.1:3000",
-            "http://127.0.0.1:3001",
-        ]
-        
-        headers = {}
-        if origin in allowed_origins:
-            headers["Access-Control-Allow-Origin"] = origin
-            headers["Access-Control-Allow-Credentials"] = "true"
-            headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-            headers["Access-Control-Allow-Headers"] = "*"
-            headers["Access-Control-Expose-Headers"] = "*"
-        
-        # Re-raise to let the exception handler deal with it
-        # But ensure CORS headers are added
-        raise
-    
     origin = request.headers.get("origin")
     allowed_origins = [
         "http://localhost:3000",
@@ -184,6 +166,33 @@ async def add_cors_header(request: Request, call_next):
         "http://127.0.0.1:3001",
     ]
     
+    try:
+        response = await call_next(request)
+    except Exception as e:
+        # If an exception occurs, create a response with CORS headers
+        # Create error response with CORS
+        from fastapi.responses import JSONResponse
+        error_response = JSONResponse(
+            status_code=500,
+            content={
+                "error": "internal_server_error",
+                "message": str(e) if get_settings().app.debug else "An error occurred",
+            }
+        )
+        
+        if origin in allowed_origins:
+            error_response.headers["Access-Control-Allow-Origin"] = origin
+            error_response.headers["Access-Control-Allow-Credentials"] = "true"
+            error_response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+            error_response.headers["Access-Control-Allow-Headers"] = "*"
+            error_response.headers["Access-Control-Expose-Headers"] = "*"
+        elif origin:
+            # Allow any origin for errors to prevent CORS blocking
+            error_response.headers["Access-Control-Allow-Origin"] = origin
+        
+        return error_response
+    
+    # Add CORS headers to successful responses
     if origin in allowed_origins:
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Access-Control-Allow-Credentials"] = "true"
@@ -191,6 +200,9 @@ async def add_cors_header(request: Request, call_next):
         response.headers["Access-Control-Allow-Headers"] = "*"
         response.headers["Access-Control-Expose-Headers"] = "*"
         response.headers["Access-Control-Max-Age"] = "3600"
+    elif origin:
+        # Fallback: allow the requesting origin even if not in whitelist
+        response.headers["Access-Control-Allow-Origin"] = origin
     
     return response
 

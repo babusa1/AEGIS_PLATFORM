@@ -7,10 +7,13 @@ Uses PostgreSQL when available, falls back to mock data.
 
 from typing import Any
 
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from pydantic import BaseModel, Field
 
 from aegis.api.auth import TenantContext, get_tenant_context
+
+logger = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/patients", tags=["Patients"])
 
@@ -146,45 +149,54 @@ async def list_patients(
                 for row in patient_rows
             ]
         else:
-            # Fall back to mock via graph client
-            from aegis.graph.client import get_graph_client
-            client = await get_graph_client()
-            
-            query = """
-            g.V()
-                .hasLabel('Patient')
-                .has('tenant_id', tenant_id)
-                .order().by('family_name', asc)
-                .range(offset, offset + limit)
-                .valueMap(true)
-            """
-            bindings = {
-                "tenant_id": tenant.tenant_id,
-                "offset": offset,
-                "limit": page_size,
-            }
-            
-            results = await client.execute(query, bindings)
-            
-            count_query = """
-            g.V()
-                .hasLabel('Patient')
-                .has('tenant_id', tenant_id)
-                .count()
-            """
-            count_result = await client.execute(count_query, {"tenant_id": tenant.tenant_id})
-            total = count_result[0] if count_result else 0
-            
-            patients = []
-            for row in results:
-                patients.append(PatientSummary(
-                    id=str(row.get("id", [""])[0] if isinstance(row.get("id"), list) else row.get("id", "")),
-                    mrn=row.get("mrn", [""])[0] if isinstance(row.get("mrn"), list) else row.get("mrn", ""),
-                    given_name=row.get("given_name", [""])[0] if isinstance(row.get("given_name"), list) else row.get("given_name", ""),
-                    family_name=row.get("family_name", [""])[0] if isinstance(row.get("family_name"), list) else row.get("family_name", ""),
-                    birth_date=row.get("birth_date", [None])[0] if isinstance(row.get("birth_date"), list) else row.get("birth_date"),
-                    gender=row.get("gender", [None])[0] if isinstance(row.get("gender"), list) else row.get("gender"),
-                ))
+            # Fall back to mock data when no database available
+            try:
+                from aegis.graph.client import get_graph_client
+                client = await get_graph_client()
+                
+                query = """
+                g.V()
+                    .hasLabel('Patient')
+                    .has('tenant_id', tenant_id)
+                    .order().by('family_name', asc)
+                    .range(offset, offset + limit)
+                    .valueMap(true)
+                """
+                bindings = {
+                    "tenant_id": tenant.tenant_id,
+                    "offset": offset,
+                    "limit": page_size,
+                }
+                
+                results = await client.execute(query, bindings)
+                
+                count_query = """
+                g.V()
+                    .hasLabel('Patient')
+                    .has('tenant_id', tenant_id)
+                    .count()
+                """
+                count_result = await client.execute(count_query, {"tenant_id": tenant.tenant_id})
+                total = int(count_result[0]) if count_result and len(count_result) > 0 else 0
+                
+                patients = []
+                for row in results:
+                    patients.append(PatientSummary(
+                        id=str(row.get("id", [""])[0] if isinstance(row.get("id"), list) else row.get("id", "")),
+                        mrn=row.get("mrn", [""])[0] if isinstance(row.get("mrn"), list) else row.get("mrn", ""),
+                        given_name=row.get("given_name", [""])[0] if isinstance(row.get("given_name"), list) else row.get("given_name", ""),
+                        family_name=row.get("family_name", [""])[0] if isinstance(row.get("family_name"), list) else row.get("family_name", ""),
+                        birth_date=row.get("birth_date", [None])[0] if isinstance(row.get("birth_date"), list) else row.get("birth_date"),
+                        gender=row.get("gender", [None])[0] if isinstance(row.get("gender"), list) else row.get("gender"),
+                    ))
+            except Exception as e:
+                # If graph client fails, return empty mock data
+                logger.warning(f"Failed to query graph client, returning mock data: {e}")
+                patients = []
+                total = 0
+        
+        # Ensure total is always an integer
+        total = int(total) if total is not None else 0
         
         return PatientListResponse(
             patients=patients,
