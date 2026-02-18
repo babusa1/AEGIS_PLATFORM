@@ -116,7 +116,7 @@ async def list_patients(
     page: int = Query(default=1, ge=1, description="Page number"),
     page_size: int = Query(default=20, ge=1, le=100, description="Items per page"),
     search: str | None = Query(default=None, description="Search by name or MRN"),
-    tenant: TenantContext | None = Depends(get_tenant_context),
+    tenant: TenantContext | None = None,
 ):
     """
     List patients for the current tenant.
@@ -125,8 +125,10 @@ async def list_patients(
     Uses PostgreSQL when available, falls back to mock data.
     """
     try:
-        # Default tenant if not provided
-        tenant_id = tenant.tenant_id if tenant else "default"
+        # Default tenant if not provided (for demo mode)
+        tenant_id = "default"
+        if tenant:
+            tenant_id = tenant.tenant_id
         offset = (page - 1) * page_size
         repo = await get_patient_repo(request)
         
