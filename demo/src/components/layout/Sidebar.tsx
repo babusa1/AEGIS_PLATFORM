@@ -45,6 +45,7 @@ export function Sidebar() {
               src="/images/veritos-logo.png"
               alt="VeritOS Logo"
               fill
+              sizes="48px"
               className="object-contain"
               priority
             />
