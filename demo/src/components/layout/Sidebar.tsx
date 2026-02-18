@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { 
   LayoutDashboard, 
@@ -11,7 +12,6 @@ import {
   BarChart3,
   Settings,
   Database,
-  Shield,
   MessageSquare
 } from 'lucide-react'
 import clsx from 'clsx'
@@ -40,11 +40,17 @@ export function Sidebar() {
       {/* Logo */}
       <div className="p-6 border-b border-white/10">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-aegis-primary to-aegis-accent rounded-lg flex items-center justify-center">
-            <Shield className="w-6 h-6" />
+          <div className="relative w-12 h-12 flex-shrink-0">
+            <Image
+              src="/images/veritos-logo.png"
+              alt="VeritOS Logo"
+              fill
+              className="object-contain"
+              priority
+            />
           </div>
-          <div>
-            <h1 className="text-xl font-bold">VeritOS</h1>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl font-bold text-white">VeritOS</h1>
             <p className="text-xs text-gray-400">Healthcare Intelligence</p>
           </div>
         </div>

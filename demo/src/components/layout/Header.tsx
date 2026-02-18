@@ -59,13 +59,13 @@ export function Header() {
           <div className="p-4 border-b border-gray-100">
             <h3 className="font-semibold flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-aegis-primary" />
-              AEGIS AI Assistant
+              VeritOS AI Assistant
             </h3>
           </div>
           <div className="p-4 h-64 overflow-y-auto">
             <div className="bg-gray-50 rounded-lg p-3 mb-3">
               <p className="text-sm text-gray-600">
-                Hello! I'm AEGIS, your healthcare intelligence assistant. I can help you:
+                Hello! I'm VeritOS, your healthcare intelligence assistant. I can help you:
               </p>
               <ul className="mt-2 text-sm text-gray-600 space-y-1">
                 <li>• Generate patient 360 views</li>
