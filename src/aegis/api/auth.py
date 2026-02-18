@@ -233,9 +233,9 @@ async def get_current_user(
     """
     settings = get_settings()
     
-    # DEV MODE: Auto-authenticate as admin in development
-    if settings.app.env == "development" and bearer is None:
-        logger.debug("Dev mode: auto-authenticating as admin")
+    # DEV MODE: Auto-authenticate as admin in development or mock mode
+    if (settings.app.env == "development" or settings.app.mock_mode) and bearer is None:
+        logger.debug("Dev/Mock mode: auto-authenticating as admin")
         return User(
             id="user-001",
             email="admin@aegis.health",
