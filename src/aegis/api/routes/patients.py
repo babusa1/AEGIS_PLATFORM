@@ -116,7 +116,7 @@ async def list_patients(
     page: int = Query(default=1, ge=1, description="Page number"),
     page_size: int = Query(default=20, ge=1, le=100, description="Items per page"),
     search: str | None = Query(default=None, description="Search by name or MRN"),
-    tenant: TenantContext = Depends(get_tenant_context),
+    tenant: TenantContext | None = Depends(get_tenant_context),
 ):
     """
     List patients for the current tenant.
@@ -125,13 +125,15 @@ async def list_patients(
     Uses PostgreSQL when available, falls back to mock data.
     """
     try:
+        # Default tenant if not provided
+        tenant_id = tenant.tenant_id if tenant else "default"
         offset = (page - 1) * page_size
         repo = await get_patient_repo(request)
         
         if repo:
             # Use PostgreSQL
             patient_rows, total = await repo.list_patients(
-                tenant_id=tenant.tenant_id,
+                tenant_id=tenant_id,
                 limit=page_size,
                 offset=offset,
                 search=search
@@ -163,7 +165,7 @@ async def list_patients(
                     .valueMap(true)
                 """
                 bindings = {
-                    "tenant_id": tenant.tenant_id,
+                    "tenant_id": tenant_id,
                     "offset": offset,
                     "limit": page_size,
                 }
@@ -176,7 +178,7 @@ async def list_patients(
                     .has('tenant_id', tenant_id)
                     .count()
                 """
-                count_result = await client.execute(count_query, {"tenant_id": tenant.tenant_id})
+                count_result = await client.execute(count_query, {"tenant_id": tenant_id})
                 total = int(count_result[0]) if count_result and len(count_result) > 0 else 0
                 
                 patients = []

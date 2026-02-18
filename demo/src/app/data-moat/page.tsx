@@ -159,14 +159,14 @@ export default function DataMoatExplorer() {
     }
   }
 
-  const filteredEntities = registry?.entity_types.filter(e => {
+  const filteredEntities = (registry?.entity_types || []).filter(e => {
     const matchesSearch = !searchQuery || 
       e.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
       e.metadata.description.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = !selectedCategory || 
       entityCategories[selectedCategory as keyof typeof entityCategories]?.includes(e.type)
     return matchesSearch && matchesCategory
-  }) || []
+  })
 
   return (
     <div className="space-y-6">
