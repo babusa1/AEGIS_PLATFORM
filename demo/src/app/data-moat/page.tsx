@@ -183,7 +183,9 @@ export default function DataMoatExplorer() {
         </div>
         {registry && (
           <div className="text-right">
-            <p className="text-3xl font-bold text-blue-600">{registry.total_entities.toLocaleString()}</p>
+            <p className="text-3xl font-bold text-blue-600">
+              {(registry.total_entities ?? 0).toLocaleString()}
+            </p>
             <p className="text-sm text-gray-500">Total Entities</p>
           </div>
         )}
@@ -207,7 +209,7 @@ export default function DataMoatExplorer() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm opacity-90">Entity Types</p>
-                <p className="text-2xl font-bold">{registry.entity_types.length}</p>
+                <p className="text-2xl font-bold">{registry.entity_types?.length ?? 0}</p>
               </div>
               <Database className="w-8 h-8 opacity-50" />
             </div>
