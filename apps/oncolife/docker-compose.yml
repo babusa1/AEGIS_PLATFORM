@@ -1,0 +1,234 @@
+# =============================================================================
+# OncoLife Monolith - Docker Compose Configuration
+# =============================================================================
+# This file orchestrates all services for local development and testing.
+#
+# Usage:
+#   docker-compose up -d           # Start all services
+#   docker-compose up patient-api  # Start specific service
+#   docker-compose logs -f         # View logs
+#   docker-compose down            # Stop all services
+#
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # DATABASES
+  # ===========================================================================
+  
+  postgres:
+    image: postgres:15-alpine
+    container_name: oncolife-postgres
+    environment:
+      POSTGRES_USER: oncolife_admin
+      POSTGRES_PASSWORD: oncolife_dev_password
+      POSTGRES_MULTIPLE_DATABASES: oncolife_patient,oncolife_doctor
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/db/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oncolife_admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - oncolife-network
+
+  # ===========================================================================
+  # BACKEND APIS
+  # ===========================================================================
+
+  patient-api:
+    build:
+      context: ./apps/patient-platform/patient-api
+      dockerfile: Dockerfile
+    container_name: oncolife-patient-api
+    environment:
+      # Application
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+      - LOG_FORMAT=text
+      - LOCAL_DEV_MODE=true
+      # Patient Database
+      - PATIENT_DB_HOST=postgres
+      - PATIENT_DB_PORT=5432
+      - PATIENT_DB_USER=oncolife_admin
+      - PATIENT_DB_PASSWORD=oncolife_dev_password
+      - PATIENT_DB_NAME=oncolife_patient
+      # Doctor Database (read-only)
+      - DOCTOR_DB_HOST=postgres
+      - DOCTOR_DB_PORT=5432
+      - DOCTOR_DB_USER=oncolife_admin
+      - DOCTOR_DB_PASSWORD=oncolife_dev_password
+      - DOCTOR_DB_NAME=oncolife_doctor
+      # AWS
+      - AWS_REGION=${AWS_REGION:-us-west-2}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      # Cognito
+      - COGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID:-}
+      - COGNITO_CLIENT_ID=${COGNITO_CLIENT_ID:-}
+      - COGNITO_CLIENT_SECRET=${COGNITO_CLIENT_SECRET:-}
+      # S3 Buckets
+      - S3_REFERRAL_BUCKET=${S3_REFERRAL_BUCKET:-oncolife-referrals}
+      - S3_EDUCATION_BUCKET=${S3_EDUCATION_BUCKET:-oncolife-education}
+      # Other
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./apps/patient-platform/patient-api/src:/app:cached
+      - ./apps/patient-platform/patient-api/static:/app/static:cached
+      - ./apps/patient-platform/patient-api/alembic:/app/alembic:cached
+      - ./apps/patient-platform/patient-api/alembic.ini:/app/alembic.ini:cached
+      - ./apps/patient-platform/patient-api/scripts:/app/scripts:cached
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - oncolife-network
+
+  doctor-api:
+    build:
+      context: ./apps/doctor-platform/doctor-api
+      dockerfile: Dockerfile
+    container_name: oncolife-doctor-api
+    environment:
+      # Application
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - LOG_LEVEL=DEBUG
+      - LOG_FORMAT=text
+      - LOCAL_DEV_MODE=true
+      # Doctor Database (primary)
+      - DOCTOR_DB_HOST=postgres
+      - DOCTOR_DB_PORT=5432
+      - DOCTOR_DB_USER=oncolife_admin
+      - DOCTOR_DB_PASSWORD=oncolife_dev_password
+      - DOCTOR_DB_NAME=oncolife_doctor
+      # Patient Database (read-only)
+      - PATIENT_DB_HOST=postgres
+      - PATIENT_DB_PORT=5432
+      - PATIENT_DB_USER=oncolife_admin
+      - PATIENT_DB_PASSWORD=oncolife_dev_password
+      - PATIENT_DB_NAME=oncolife_patient
+      # AWS
+      - AWS_REGION=${AWS_REGION:-us-west-2}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      # Cognito
+      - COGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID:-}
+      - COGNITO_CLIENT_ID=${COGNITO_CLIENT_ID:-}
+      - COGNITO_CLIENT_SECRET=${COGNITO_CLIENT_SECRET:-}
+      # Other
+      - CORS_ORIGINS=http://localhost:3001,http://localhost:5174
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./apps/doctor-platform/doctor-api/src:/app:cached
+      - ./apps/doctor-platform/doctor-api/alembic:/app/alembic:cached
+      - ./apps/doctor-platform/doctor-api/alembic.ini:/app/alembic.ini:cached
+    command: uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - oncolife-network
+
+  # ===========================================================================
+  # BACKEND FOR FRONTEND (BFF)
+  # ===========================================================================
+
+  patient-server:
+    build:
+      context: ./apps/patient-platform/patient-server
+      dockerfile: Dockerfile
+    container_name: oncolife-patient-server
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - PATIENT_API_URL=http://patient-api:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - patient-api
+    volumes:
+      - ./apps/patient-platform/patient-server:/app:cached
+      - /app/node_modules
+    networks:
+      - oncolife-network
+
+  # ===========================================================================
+  # FRONTENDS (Optional - run locally with npm for hot reload)
+  # ===========================================================================
+
+  # NOTE: For development, run frontends locally with `npm run dev` for hot reload
+  # Docker builds are for production testing only
+  patient-web:
+    build:
+      # Context must be monorepo root for shared packages (file: references)
+      context: .
+      dockerfile: apps/patient-platform/patient-web/Dockerfile
+      args:
+        - VITE_API_BASE_URL=http://localhost:8000
+        - VITE_WS_BASE_URL=ws://localhost:8000
+    container_name: oncolife-patient-web
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "5173:80"
+    depends_on:
+      - patient-api
+    networks:
+      - oncolife-network
+
+  doctor-web:
+    build:
+      # Context must be monorepo root for shared packages (file: references)
+      context: .
+      dockerfile: apps/doctor-platform/doctor-web/Dockerfile
+      args:
+        - VITE_API_BASE_URL=http://localhost:8001
+        - VITE_PATIENT_API_URL=http://localhost:8000
+    container_name: oncolife-doctor-web
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "5174:80"
+    depends_on:
+      - doctor-api
+    networks:
+      - oncolife-network
+
+# =============================================================================
+# NETWORKS
+# =============================================================================
+
+networks:
+  oncolife-network:
+    driver: bridge
+
+# =============================================================================
+# VOLUMES
+# =============================================================================
+
+volumes:
+  postgres_data:
+    driver: local
+
+
+

@@ -1,0 +1,27 @@
+{
+    "compilerOptions": {
+      "target": "ES2022",
+      "module": "ESNext",
+      "lib": ["ES2022", "DOM", "DOM.Iterable"],
+      "jsx": "react-jsx",
+      "strict": true,
+      "esModuleInterop": true,
+      "skipLibCheck": true,
+      "forceConsistentCasingInFileNames": true,
+      "resolveJsonModule": true,
+      "moduleResolution": "node",
+      "allowSyntheticDefaultImports": true,
+      "declaration": true,
+      "declarationMap": true,
+      "sourceMap": true,
+      "baseUrl": ".",
+      "paths": {
+        "@oncolife/ui-components": ["packages/ui-components/src"],
+        "@oncolife/shared-types": ["packages/shared-types/src"],
+        "@oncolife/api-client": ["packages/api-client/src"],
+        "@oncolife/auth-utils": ["packages/auth-utils/src"],
+        "@oncolife/shared-assets": ["packages/shared-assets"]
+      }
+    },
+    "exclude": ["node_modules", "dist", "build"]
+  }

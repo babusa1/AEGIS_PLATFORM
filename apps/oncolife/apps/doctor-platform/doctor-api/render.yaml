@@ -1,0 +1,45 @@
+# Render Blueprint for Doctor API
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: oncolife-doctor-api
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: cd src && uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: LOCAL_DEV_MODE
+        value: true
+      - key: LOG_LEVEL
+        value: INFO
+      - key: LOG_FORMAT
+        value: json
+      - key: CORS_ORIGINS
+        sync: false
+      - key: DOCTOR_DB_HOST
+        sync: false
+      - key: DOCTOR_DB_PORT
+        value: 5432
+      - key: DOCTOR_DB_USER
+        sync: false
+      - key: DOCTOR_DB_PASSWORD
+        sync: false
+      - key: DOCTOR_DB_NAME
+        value: oncolife_doctor
+      - key: PATIENT_DB_HOST
+        sync: false
+      - key: PATIENT_DB_PORT
+        value: 5432
+      - key: PATIENT_DB_USER
+        sync: false
+      - key: PATIENT_DB_PASSWORD
+        sync: false
+      - key: PATIENT_DB_NAME
+        value: oncolife_patient

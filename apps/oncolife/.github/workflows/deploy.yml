@@ -1,0 +1,286 @@
+# =============================================================================
+# OncoLife Monolith - Continuous Deployment (CD) Workflow
+# =============================================================================
+# Deploys to AWS staging/production environment
+# 
+# Jobs:
+# 1. Build & Push - Build Docker images and push to ECR
+# 2. Deploy APIs - Deploy backend APIs to ECS Fargate
+# 3. Deploy Frontends - Build and deploy to S3 + CloudFront
+# 4. Migrate - Run database migrations
+# =============================================================================
+
+name: Deploy to AWS
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  AWS_REGION: us-east-1
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
+  ECS_CLUSTER: oncolife-production
+
+jobs:
+  # ===========================================================================
+  # BUILD & PUSH - Build and Push Docker Images to ECR
+  # ===========================================================================
+  build-apis:
+    name: Build & Push APIs to ECR
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Patient API
+        uses: docker/build-push-action@v5
+        with:
+          context: apps/patient-platform/patient-api
+          file: apps/patient-platform/patient-api/Dockerfile
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/oncolife-patient-api:${{ github.sha }}
+            ${{ env.ECR_REGISTRY }}/oncolife-patient-api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push Doctor API
+        uses: docker/build-push-action@v5
+        with:
+          context: apps/doctor-platform/doctor-api
+          file: apps/doctor-platform/doctor-api/Dockerfile
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/oncolife-doctor-api:${{ github.sha }}
+            ${{ env.ECR_REGISTRY }}/oncolife-doctor-api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ===========================================================================
+  # DEPLOY APIS - Deploy to ECS Fargate
+  # ===========================================================================
+  deploy-apis:
+    name: Deploy APIs to ECS
+    runs-on: ubuntu-latest
+    needs: build-apis
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update Patient API service
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service patient-api-service \
+            --force-new-deployment
+
+      - name: Update Doctor API service
+        run: |
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service doctor-api-service \
+            --force-new-deployment
+
+      - name: Wait for Patient API deployment
+        run: |
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services patient-api-service
+        timeout-minutes: 10
+
+      - name: Wait for Doctor API deployment
+        run: |
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services doctor-api-service
+        timeout-minutes: 10
+
+  # ===========================================================================
+  # DEPLOY FRONTENDS - Build and Deploy to S3 + CloudFront
+  # ===========================================================================
+  deploy-frontends:
+    name: Deploy Frontends to S3/CloudFront
+    runs-on: ubuntu-latest
+    needs: deploy-apis
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            apps/patient-platform/patient-web/package-lock.json
+            apps/doctor-platform/doctor-web/package-lock.json
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Patient Web
+      - name: Install Patient Web dependencies
+        working-directory: apps/patient-platform/patient-web
+        run: npm ci --legacy-peer-deps
+
+      - name: Build Patient Web
+        working-directory: apps/patient-platform/patient-web
+        env:
+          VITE_API_BASE: ${{ secrets.PATIENT_API_URL }}
+          VITE_WS_BASE: ${{ secrets.PATIENT_WS_URL }}
+          VITE_DEMO_MODE: 'true'
+        run: npm run build
+
+      - name: Deploy Patient Web to S3
+        run: |
+          aws s3 sync apps/patient-platform/patient-web/dist/ \
+            s3://${{ secrets.PATIENT_WEB_BUCKET }}/ \
+            --delete \
+            --cache-control "max-age=31536000" \
+            --exclude "index.html"
+          
+          aws s3 cp apps/patient-platform/patient-web/dist/index.html \
+            s3://${{ secrets.PATIENT_WEB_BUCKET }}/index.html \
+            --cache-control "no-cache, no-store, must-revalidate"
+
+      - name: Invalidate Patient CloudFront
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.PATIENT_CLOUDFRONT_ID }} \
+            --paths "/*"
+
+      # Doctor Web
+      - name: Install Doctor Web dependencies
+        working-directory: apps/doctor-platform/doctor-web
+        run: npm ci --legacy-peer-deps
+
+      - name: Build Doctor Web
+        working-directory: apps/doctor-platform/doctor-web
+        env:
+          VITE_API_BASE: ${{ secrets.DOCTOR_API_URL }}
+          VITE_PATIENT_API_BASE: ${{ secrets.PATIENT_API_URL }}
+          VITE_DEMO_MODE: 'true'
+        run: npm run build
+
+      - name: Deploy Doctor Web to S3
+        run: |
+          aws s3 sync apps/doctor-platform/doctor-web/dist/ \
+            s3://${{ secrets.DOCTOR_WEB_BUCKET }}/ \
+            --delete \
+            --cache-control "max-age=31536000" \
+            --exclude "index.html"
+          
+          aws s3 cp apps/doctor-platform/doctor-web/dist/index.html \
+            s3://${{ secrets.DOCTOR_WEB_BUCKET }}/index.html \
+            --cache-control "no-cache, no-store, must-revalidate"
+
+      - name: Invalidate Doctor CloudFront
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.DOCTOR_CLOUDFRONT_ID }} \
+            --paths "/*"
+
+  # ===========================================================================
+  # DATABASE MIGRATIONS
+  # ===========================================================================
+  migrate:
+    name: Run Database Migrations
+    runs-on: ubuntu-latest
+    needs: build-apis
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install alembic psycopg2-binary sqlalchemy
+
+      - name: Run Patient API migrations
+        working-directory: apps/patient-platform/patient-api
+        env:
+          DATABASE_URL: ${{ secrets.PATIENT_DATABASE_URL }}
+        run: |
+          alembic upgrade head || echo "No migrations to run"
+
+      - name: Run Doctor API migrations
+        working-directory: apps/doctor-platform/doctor-api
+        env:
+          DATABASE_URL: ${{ secrets.DOCTOR_DATABASE_URL }}
+        run: |
+          alembic upgrade head || echo "No migrations to run"
+
+  # ===========================================================================
+  # NOTIFY - Send Deployment Notification
+  # ===========================================================================
+  notify:
+    name: Deployment Summary
+    runs-on: ubuntu-latest
+    needs: [deploy-apis, deploy-frontends, migrate]
+    if: always()
+    
+    steps:
+      - name: Deployment Summary
+        run: |
+          echo "================================================"
+          echo "  OncoLife Deployment Summary"
+          echo "================================================"
+          echo ""
+          echo "Environment: ${{ github.event.inputs.environment || 'staging' }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Deployed by: ${{ github.actor }}"
+          echo "Time: $(date -u)"
+          echo ""
+          echo "API Deployment: ${{ needs.deploy-apis.result }}"
+          echo "Frontend Deployment: ${{ needs.deploy-frontends.result }}"
+          echo "Migrations: ${{ needs.migrate.result }}"
+          echo ""
+          if [ "${{ needs.deploy-apis.result }}" == "success" ] && \
+             [ "${{ needs.deploy-frontends.result }}" == "success" ]; then
+            echo "✅ Deployment completed successfully!"
+          else
+            echo "❌ Deployment had failures. Check logs above."
+          fi

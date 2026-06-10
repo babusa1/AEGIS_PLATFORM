@@ -1,0 +1,111 @@
+# =============================================================================
+# OncoLife Monolith - Pre-commit Configuration
+# =============================================================================
+# Install pre-commit hooks:
+#   pip install pre-commit
+#   pre-commit install
+#
+# Run on all files:
+#   pre-commit run --all-files
+#
+# Update hooks to latest versions:
+#   pre-commit autoupdate
+# =============================================================================
+
+repos:
+  # ===========================================================================
+  # GENERAL HOOKS
+  # ===========================================================================
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-yaml
+        args: [--unsafe]  # Allow custom YAML tags
+      - id: check-json
+      - id: check-toml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: no-commit-to-branch
+        args: [--branch, main, --branch, master]
+
+  # ===========================================================================
+  # PYTHON - Ruff (Fast Linter + Formatter)
+  # ===========================================================================
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.9
+    hooks:
+      # Linter
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+        files: ^apps/(patient-platform|doctor-platform)/.*-api/.*\.py$
+      # Formatter (replaces Black)
+      - id: ruff-format
+        files: ^apps/(patient-platform|doctor-platform)/.*-api/.*\.py$
+
+  # ===========================================================================
+  # PYTHON - Type Checking (Optional - can be slow)
+  # ===========================================================================
+  # Uncomment to enable mypy type checking
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.8.0
+  #   hooks:
+  #     - id: mypy
+  #       files: ^apps/(patient-platform|doctor-platform)/.*-api/src/.*\.py$
+  #       additional_dependencies:
+  #         - pydantic
+  #         - sqlalchemy
+  #         - fastapi
+
+  # ===========================================================================
+  # JAVASCRIPT/TYPESCRIPT - ESLint
+  # ===========================================================================
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.56.0
+    hooks:
+      - id: eslint
+        files: ^apps/(patient-platform|doctor-platform)/.*-web/src/.*\.(ts|tsx|js|jsx)$
+        types: [file]
+        additional_dependencies:
+          - eslint@8.56.0
+          - eslint-plugin-react@7.33.2
+          - eslint-plugin-react-hooks@4.6.0
+          - "@typescript-eslint/parser@6.18.1"
+          - "@typescript-eslint/eslint-plugin@6.18.1"
+
+  # ===========================================================================
+  # DOCKER
+  # ===========================================================================
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.12.0
+    hooks:
+      - id: hadolint-docker
+        files: Dockerfile
+
+  # ===========================================================================
+  # SECRETS DETECTION
+  # ===========================================================================
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: [--baseline, .secrets.baseline]
+        exclude: (package-lock\.json|\.env\.example|env\.example)$
+
+# =============================================================================
+# CI Integration
+# =============================================================================
+# These hooks run in CI via GitHub Actions (.github/workflows/ci.yml)
+# Pre-commit runs locally to catch issues before pushing
+#
+# To skip hooks temporarily (not recommended):
+#   git commit --no-verify -m "message"
+# =============================================================================
+
+ci:
+  autofix_prs: false
+  autoupdate_schedule: monthly

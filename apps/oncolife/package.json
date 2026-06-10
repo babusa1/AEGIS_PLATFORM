@@ -1,0 +1,28 @@
+{
+  "name": "oncolife_monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "apps/*/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "dev:patient": "turbo run dev --parallel --filter=@oncolife/patient-web --filter=@oncolife/patient-server",
+    "dev:doctor": "turbo run dev --parallel --filter=@oncolife/doctor-web --filter=@oncolife/doctor-api",
+    "build:all": "turbo run build",
+    "build:patient": "turbo run build --filter=@oncolife/patient-web --filter=@oncolife/patient-api",
+    "build:doctor": "turbo run build --filter=@oncolife/doctor-web --filter=@oncolife/doctor-api",
+    "clean": "rm -rf node_modules apps/*/node_modules apps/*/*/node_modules packages/*/node_modules"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0",
+    "turbo": "^1.10.12",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

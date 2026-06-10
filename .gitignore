@@ -24,3 +24,16 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# Security: never commit keys, secrets, or credential-bearing artifacts
+*.pem
+*.key
+*.p12
+*.pfx
+**/task-def*.json
+deployment-config-*.json
+
+# Security: never commit data exports (may contain PHI)
+*_export.csv
+conversations_insert.sql
+diary_insert.sql

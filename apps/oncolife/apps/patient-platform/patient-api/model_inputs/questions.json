@@ -1,0 +1,811 @@
+[
+  {
+    "id": "fever_short_temp",
+    "text": "What is your temperature? If your temperature is greater than 100.4°F, please specify.",
+    "symptom": "fever",
+    "data_attribute": "temp_f",
+    "phase": "short"
+  },
+  {
+    "id": "fever_short_medication",
+    "text": "Have you taken fever-reducing medications today?",
+    "symptom": "fever",
+    "data_attribute": "fever_med_taken",
+    "phase": "short"
+  },
+  {
+    "id": "fever_short_med_details",
+    "text": "What medication did you take and how often did you take it?",
+    "symptom": "fever",
+    "data_attribute": "fever_med_details",
+    "phase": "short"
+  },
+  {
+    "id": "fever_long_breathing",
+    "text": "Are you having any trouble breathing?",
+    "symptom": "fever",
+    "data_attribute": "trouble_breathing",
+    "phase": "long"
+  },
+  {
+    "id": "fever_long_symptoms_select",
+    "text": "Select all that you are currently experiencing: Rapid heartbeat (heart rate >100), nausea, vomiting, abdominal pain, diarrhea, redness around the port, cough.",
+    "symptom": "fever",
+    "data_attribute": "other_symptoms",
+    "phase": "long"
+  },
+  {
+    "id": "fever_long_dizzy_confused_urination",
+    "text": "Do you feel dizzy, confused, or experience burning on urination?",
+    "symptom": "fever",
+    "data_attribute": "dizzy_confused_urination",
+    "phase": "long"
+  },
+  {
+    "id": "fever_long_intake",
+    "text": "How much have you been able to eat or drink in the last 24 hours? Select: About the same as usual; Less than half; Almost nothing; I haven't eaten or had anything to drink.",
+    "symptom": "fever",
+    "data_attribute": "oral_intake_pct",
+    "phase": "long"
+  },
+  {
+    "id": "fever_long_self_care",
+    "text": "Are you able to perform daily self care like bathing and dressing yourself?",
+    "symptom": "fever",
+    "data_attribute": "self_care_ability",
+    "phase": "long"
+  },
+
+  {
+    "id": "nausea_short_days",
+    "text": "How many days have you been nauseated?",
+    "symptom": "nausea",
+    "data_attribute": "days_in_a_row",
+    "phase": "short"
+  },
+  {
+    "id": "nausea_short_intake",
+    "text": "How much have you been able to eat or drink in the last 24 hours? Select: About the same as usual; Less than half; Almost nothing; I haven't eaten or had anything to drink.",
+    "symptom": "nausea",
+    "data_attribute": "oral_intake_pct",
+    "phase": "short"
+  },
+  {
+    "id": "nausea_short_med",
+    "text": "Are you taking anti-nausea medications?",
+    "symptom": "nausea",
+    "data_attribute": "anti_nausea_med_taken",
+    "phase": "short"
+  },
+  {
+    "id": "nausea_short_med_details",
+    "text": "If yes, what medication did you take and how often?",
+    "symptom": "nausea",
+    "data_attribute": "med_details",
+    "phase": "short"
+  },
+  {
+    "id": "nausea_short_rating",
+    "text": "How would you rate your nausea overall: mild, moderate, or severe? (If you’ve taken anti-nausea medication, please rate how it felt after taking the medication.)",
+    "symptom": "nausea",
+    "data_attribute": "nausea_rating",
+    "phase": "short"
+  },
+  {
+    "id": "nausea_long_vomit",
+    "text": "Have you vomited in the last 24 hours? If so, how many times?",
+    "symptom": "nausea",
+    "data_attribute": "vomit_count_24h",
+    "phase": "long"
+  },
+  {
+    "id": "nausea_long_abdominal_pain",
+    "text": "Are you experiencing abdominal pain or cramping?",
+    "symptom": "nausea",
+    "data_attribute": "abdominal_pain_presence",
+    "phase": "long"
+  },
+  {
+    "id": "nausea_long_weight_loss",
+    "text": "Any weight loss?",
+    "symptom": "nausea",
+    "data_attribute": "weight_loss",
+    "phase": "long"
+  },
+  {
+    "id": "nausea_long_fever",
+    "text": "Any fever > 100.4°F?",
+    "symptom": "nausea",
+    "data_attribute": "temp_f",
+    "phase": "long"
+  },
+  {
+    "id": "nausea_long_urine_color",
+    "text": "What color is your urine?",
+    "symptom": "nausea",
+    "data_attribute": "urine_color",
+    "phase": "long"
+  },
+  {
+    "id": "nausea_long_urine_amount",
+    "text": "Is the amount of urine in the last 12 hours a lot less than your usual amount?",
+    "symptom": "nausea",
+    "data_attribute": "urine_output_pct",
+    "phase": "long"
+  },
+  {
+    "id": "nausea_long_thirsty",
+    "text": "Are you very thirsty?",
+    "symptom": "nausea",
+    "data_attribute": "thirst_presence",
+    "phase": "long"
+  },
+  {
+    "id": "nausea_long_lightheaded",
+    "text": "Are you lightheaded?",
+    "symptom": "nausea",
+    "data_attribute": "lightheaded_presence",
+    "phase": "long"
+  },
+  {
+    "id": "nausea_long_self_care",
+    "text": "Are you able to perform self care activities?",
+    "symptom": "nausea",
+    "data_attribute": "self_care_ability",
+    "phase": "long"
+  },  
+  {
+    "id": "vomiting_short_days",
+    "text": "How many days have you been vomiting?",
+    "symptom": "vomiting",
+    "data_attribute": "days_in_a_row",
+    "phase": "short"
+  },
+  {
+    "id": "vomiting_short_times",
+    "text": "How many times have you vomited in the last 24 hours?",
+    "symptom": "vomiting",
+    "data_attribute": "vomit_count_24h",
+    "phase": "short"
+  },
+  {
+    "id": "vomiting_short_intake",
+    "text": "How much have you been able to eat or drink in the last 12 hours? Select: About the same as usual; Less than half; Almost nothing; I haven't eaten or had anything to drink.",
+    "symptom": "vomiting",
+    "data_attribute": "oral_intake_pct",
+    "phase": "short"
+  },
+  {
+    "id": "vomiting_short_med_rating",
+    "text": "Are you taking medication for vomiting as prescribed? Rate How would you rate your vomiting overall: mild, moderate, or severe? (If you’ve taken medication, please rate how it felt after taking the medication).",
+    "symptom": "vomiting",
+    "data_attribute": "vomit_rating",
+    "phase": "short"
+  },
+  {
+    "id": "vomiting_short_followup",
+    "text": "If moderate over 3 days: you've had this symptom for a few days. Are your medications resulting in the symptom getting worse, staying the same, or improving?",
+    "symptom": "vomiting",
+    "data_attribute": "med_effect_trend",
+    "phase": "short"
+  },
+  {
+    "id": "vomiting_long_abdominal_pain",
+    "text": "Do you have abdominal pain or cramping?",
+    "symptom": "vomiting",
+    "data_attribute": "abdominal_pain_presence",
+    "phase": "long"
+  },
+  {
+    "id": "vomiting_long_constipated",
+    "text": "Are you constipated?",
+    "symptom": "vomiting",
+    "data_attribute": "constipation_presence",
+    "phase": "long"
+  },
+  {
+    "id": "vomiting_long_bowel_movement_count",
+    "text": "How many bowel movements do you have a day?",
+    "symptom": "vomiting",
+    "data_attribute": "bowel_movements_per_day",
+    "phase": "long"
+  },
+  {
+    "id": "vomiting_long_diarrhea",
+    "text": "Do you have diarrhea?",
+    "symptom": "vomiting",
+    "data_attribute": "diarrhea_presence",
+    "phase": "long"
+  },
+  {
+    "id": "vomiting_long_functional_impact",
+    "text": "Has your vomiting affected your ability to do daily household work?",
+    "symptom": "vomiting",
+    "data_attribute": "functional_impact",
+    "phase": "long"
+  },
+  {
+    "id": "vomiting_long_self_care",
+    "text": "Are you able to perform daily self care like bathing and dressing yourself?",
+    "symptom": "vomiting",
+    "data_attribute": "self_care_ability",
+    "phase": "long"
+  },  
+
+  {
+    "id": "diarrhea_short_days",
+    "text": "How many days have you had diarrhea?",
+    "symptom": "diarrhea",
+    "data_attribute": "days_in_a_row",
+    "phase": "short"
+  },
+  {
+    "id": "diarrhea_short_loose_stools",
+    "text": "How many loose stools have you had in the last 24 hours?",
+    "symptom": "diarrhea",
+    "data_attribute": "loose_stools_per_day",
+    "phase": "short"
+  },
+  {
+    "id": "diarrhea_short_abdominal_pain",
+    "text": "Do you have abdominal pain or cramping?",
+    "symptom": "diarrhea",
+    "data_attribute": "abdominal_pain_presence",
+    "phase": "short"
+  },
+  {
+    "id": "diarrhea_short_rating",
+    "text": "How would you rate your diarrhea overall: mild, moderate, or severe? (If you’ve taken anti-diarrhea medication, please rate how it felt after taking the medication.)",
+    "symptom": "diarrhea",
+    "data_attribute": "diarrhea_rating",
+    "phase": "short"
+  },
+  {
+    "id": "diarrhea_short_stool_type",
+    "text": "Is your stool: Black, Bloody, Contains mucus, Normal, Other (select all that apply)?",
+    "symptom": "diarrhea",
+    "data_attribute": "stool_contains",
+    "phase": "short"
+  },
+  {
+    "id": "diarrhea_short_other_description",
+    "text": "If Other, describe your stool.",
+    "symptom": "diarrhea",
+    "data_attribute": "stool_description",
+    "phase": "short"
+  },
+  {
+    "id": "diarrhea_short_med",
+    "text": "Have you taken anti-diarrhea medications as prescribed?",
+    "symptom": "diarrhea",
+    "data_attribute": "antidiarrheal_med_taken",
+    "phase": "short"
+  },
+  {
+    "id": "diarrhea_short_med_details",
+    "text": "What did you take and how often?",
+    "symptom": "diarrhea",
+    "data_attribute": "med_details",
+    "phase": "short"
+  },
+  {
+    "id": "diarrhea_short_intake",
+    "text": "How much have you been able to eat or drink in the last 12 hours? Select: About the same as usual; Less than half; Almost nothing; I haven't eaten or had anything to drink.",
+    "symptom": "diarrhea",
+    "data_attribute": "oral_intake_pct",
+    "phase": "short"
+  },
+  {
+    "id": "diarrhea_short_post_med_rating",
+    "text": "Rate your diarrhea as mild, moderate, or severe after medications.",
+    "symptom": "diarrhea",
+    "data_attribute": "diarrhea_rating_post_med",
+    "phase": "short"
+  },
+  {
+    "id": "diarrhea_short_followup",
+    "text": "If moderate over 3 days: you've had this symptom for a few days. Are your medications resulting in the symptom getting worse, staying the same, or improving?",
+    "symptom": "diarrhea",
+    "data_attribute": "med_effect_trend",
+    "phase": "short"
+  },
+  {
+    "id": "diarrhea_long_self_care",
+    "text": "Are you able to perform daily self-care activities (e.g., bathing, dressing)?",
+    "symptom": "diarrhea",
+    "data_attribute": "self_care_ability",
+    "phase": "long"
+  },
+  {
+    "id": "diarrhea_long_functional_impact",
+    "text": "Has the diarrhea affected your ability to do daily activities such as household work, eating, moving around?",
+    "symptom": "diarrhea",
+    "data_attribute": "functional_impact",
+    "phase": "long"
+  },
+  {
+    "id": "diarrhea_long_fever",
+    "text": "Any fever > 100.4°F?",
+    "symptom": "diarrhea",
+    "data_attribute": "temp_f",
+    "phase": "long"
+  },
+  {
+    "id": "diarrhea_long_nausea_vomiting",
+    "text": "Any nausea or vomiting?",
+    "symptom": "diarrhea",
+    "data_attribute": "nausea_or_vomiting",
+    "phase": "long"
+  },
+  {
+    "id": "diarrhea_long_urine_color",
+    "text": "What color is your urine?",
+    "symptom": "diarrhea",
+    "data_attribute": "urine_color",
+    "phase": "long"
+  },
+  {
+    "id": "diarrhea_long_urine_amount",
+    "text": "Is the amount of urine in the last 12 hours a lot less than your usual amount?",
+    "symptom": "diarrhea",
+    "data_attribute": "urine_output_pct",
+    "phase": "long"
+  },
+  {
+    "id": "diarrhea_long_thirsty_lightheaded",
+    "text": "Are you very thirsty or lightheaded?",
+    "symptom": "diarrhea",
+    "data_attribute": "thirst_or_lightheaded",
+    "phase": "long"
+  },  
+
+  {
+    "id": "bleeding_short_pressure",
+    "text": "Are you experiencing bleeding that won't stop after applying pressure?",
+    "symptom": "bleeding",
+    "data_attribute": "bleeding_persists_after_pressure",
+    "phase": "short"
+  },
+  {
+    "id": "bleeding_short_blood_stool_urine",
+    "text": "Do you have a lot of blood in your stool or urine?",
+    "symptom": "bleeding",
+    "data_attribute": "blood_in_stool_or_urine",
+    "phase": "short"
+  },
+  {
+    "id": "bleeding_short_injury",
+    "text": "Did you injure yourself?",
+    "symptom": "bleeding",
+    "data_attribute": "injury_presence",
+    "phase": "short"
+  },
+  {
+    "id": "bleeding_short_anticoagulants",
+    "text": "Are you on blood thinners (e.g., Xarelto, Eliquis, Coumadin, Plavix)?",
+    "symptom": "bleeding",
+    "data_attribute": "on_anticoagulants",
+    "phase": "short"
+  },
+  {
+    "id": "bleeding_short_bruising_location",
+    "text": "Is the bruising in one area of your body or all over?",
+    "symptom": "bleeding",
+    "data_attribute": "bruise_distribution",
+    "phase": "short"
+  },
+
+  {
+    "id": "fatigue_short_days",
+    "text": "How many days have you been experiencing fatigue?",
+    "symptom": "fatigue",
+    "data_attribute": "days_in_a_row",
+    "phase": "short"
+  },
+  {
+    "id": "fatigue_short_interference",
+    "text": "Is your fatigue interfering with daily activities like household chores or work?",
+    "symptom": "fatigue",
+    "data_attribute": "fatigue_interferes_with_adl",
+    "phase": "short"
+  },
+  {
+    "id": "fatigue_short_rating",
+    "text": "Rate your fatigue severity: mild, moderate, or severe.",
+    "symptom": "fatigue",
+    "data_attribute": "fatigue_rating",
+    "phase": "short"
+  },
+  {
+    "id": "fatigue_short_followup",
+    "text": "If moderate over 3 days: you've had this symptom for a few days. Is it getting worse, staying the same, or improving?",
+    "symptom": "fatigue",
+    "data_attribute": "fatigue_trend",
+    "phase": "short"
+  },
+  {
+    "id": "fatigue_long_sleep_hours",
+    "text": "How many hours are you sleeping/spending in bed each day due to fatigue?",
+    "symptom": "fatigue",
+    "data_attribute": "sleep_hours",
+    "phase": "long"
+  },
+  {
+    "id": "fatigue_long_self_care",
+    "text": "Has the fatigue affected your ability to bathe, dress, or feed yourself without help?",
+    "symptom": "fatigue",
+    "data_attribute": "self_care_ability",
+    "phase": "long"
+  },
+  {
+    "id": "fatigue_long_associated_symptoms",
+    "text": "Do you have fever, nausea, vomiting, diarrhea, or lack of appetite?",
+    "symptom": "fatigue",
+    "data_attribute": "associated_symptoms",
+    "phase": "long"
+  },  
+
+  {
+    "id": "eye_short_new",
+    "text": "Are your eye symptoms new?",
+    "symptom": "eye_complaints",
+    "data_attribute": "new_symptom",
+    "phase": "short"
+  },
+  {
+    "id": "eye_short_pain",
+    "text": "Are you experiencing pain?",
+    "symptom": "eye_complaints",
+    "data_attribute": "eye_pain",
+    "phase": "short"
+  },
+  {
+    "id": "eye_short_discharge",
+    "text": "Is there discharge or excessive tearing from your eyes?",
+    "symptom": "eye_complaints",
+    "data_attribute": "discharge_tearing",
+    "phase": "short"
+  },
+  {
+    "id": "eye_short_vision_problems",
+    "text": "Are you experiencing any new problems with your vision?",
+    "symptom": "eye_complaints",
+    "data_attribute": "vision_problems",
+    "phase": "short"
+  },
+  {
+    "id": "eye_short_symptoms_select",
+    "text": "Select all that apply: blurry vision, double vision, other",
+    "symptom": "eye_complaints",
+    "data_attribute": "eye_symptoms",
+    "phase": "short"
+  },
+  {
+    "id": "eye_short_interference",
+    "text": "Has it interfered with your ability to perform daily tasks like reading, driving, or working on a computer?",
+    "symptom": "eye_complaints",
+    "data_attribute": "functional_impact",
+    "phase": "short"
+  },
+  {
+    "id": "eye_short_rating",
+    "text": "Rate your symptoms: mild, moderate, or severe.",
+    "symptom": "eye_complaints",
+    "data_attribute": "eye_severity",
+    "phase": "short"
+  },
+  {
+    "id": "eye_short_followup",
+    "text": "If moderate over 3 days: you've had this symptom for a few days. Is it getting worse, staying the same, or improving?",
+    "symptom": "eye_complaints",
+    "data_attribute": "symptom_trend",
+    "phase": "short"
+  },
+  {
+    "id": "eye_long_consult_doctor",
+    "text": "Have you consulted an eye doctor regarding your symptoms?",
+    "symptom": "eye_complaints",
+    "data_attribute": "consultation_history",
+    "phase": "long"
+  },  
+
+  {
+    "id": "mouth_short_pain",
+    "text": "Are you experiencing pain in your mouth?",
+    "symptom": "mouth_sores",
+    "data_attribute": "mouth_pain",
+    "phase": "short"
+  },
+  {
+    "id": "mouth_short_intake",
+    "text": "How much have you been able to eat or drink in the last 24 hours? Select: About the same as usual; Less than half; Almost nothing; I haven't eaten or had anything to drink.",
+    "symptom": "mouth_sores",
+    "data_attribute": "oral_intake_pct",
+    "phase": "short"
+  },
+  {
+    "id": "mouth_short_rating",
+    "text": "How would you rate your mouth sores overall: mild, moderate, or severe? (If you’ve taken medication, please rate how it felt after taking the medication.)",
+    "symptom": "mouth_sores",
+    "data_attribute": "mouth_sores_rating",
+    "phase": "short"
+  },
+  {
+    "id": "mouth_short_fever",
+    "text": "Do you have a fever?",
+    "symptom": "mouth_sores",
+    "data_attribute": "temp_f",
+    "phase": "short"
+  },
+  {
+    "id": "mouth_short_followup",
+    "text": "If moderate over 3 days: you've had this symptom for a few days. Is it getting worse, staying the same, or improving with medication?",
+    "symptom": "mouth_sores",
+    "data_attribute": "symptom_trend",
+    "phase": "short"
+  },
+  {
+    "id": "mouth_long_swallowing",
+    "text": "Are your mouth sores causing pain or difficulty swallowing?",
+    "symptom": "mouth_sores",
+    "data_attribute": "swallowing_difficulty",
+    "phase": "long"
+  },
+  {
+    "id": "mouth_long_days_without_food",
+    "text": "How many days have you not had normal food and/or drink?",
+    "symptom": "mouth_sores",
+    "data_attribute": "days_no_food",
+    "phase": "long"
+  },
+  {
+    "id": "mouth_long_assess_dehydration",
+    "text": "Assess for dehydration.",
+    "symptom": "mouth_sores",
+    "data_attribute": "dehydration_assessment",
+    "phase": "long"
+  }, 
+
+  {
+    "id": "appetite_short_weight_loss",
+    "text": "Have you experienced weight loss recently (defined by >2% of body weight in one week)? If yes, how much weight have you lost in pounds?",
+    "symptom": "no_appetite",
+    "data_attribute": "weight_loss_pct",
+    "phase": "short"
+  },
+  {
+    "id": "appetite_short_weight_comparison",
+    "text": "What was your weight one week ago versus today?",
+    "symptom": "no_appetite",
+    "data_attribute": "baseline_vs_current_weight",
+    "phase": "short"
+  },
+  {
+    "id": "appetite_short_intake_2days",
+    "text": "How much have you been able to eat or drink in the last 2 days? Select: About the same as usual; Less than half; Almost nothing; I haven't eaten or had anything to drink.",
+    "symptom": "no_appetite",
+    "data_attribute": "oral_intake_pct",
+    "phase": "short"
+  },  
+
+  {
+    "id": "constipation_short_days_since_bowel",
+    "text": "How many days has it been since you had a bowel movement?",
+    "symptom": "constipation",
+    "data_attribute": "days_since_bowel",
+    "phase": "short"
+  },
+  {
+    "id": "constipation_short_normal_amount",
+    "text": "What is the normal amount for you?",
+    "symptom": "constipation",
+    "data_attribute": "baseline_bowel_freq",
+    "phase": "short"
+  },
+  {
+    "id": "constipation_short_passing_gas",
+    "text": "Are you passing gas?",
+    "symptom": "constipation",
+    "data_attribute": "passing_gas",
+    "phase": "short"
+  },
+  {
+    "id": "constipation_long_abdominal_pain_vomiting",
+    "text": "Are you experiencing abdominal pain or vomiting?",
+    "symptom": "constipation",
+    "data_attribute": "abdominal_pain_or_vomiting",
+    "phase": "long"
+  },
+  {
+    "id": "constipation_long_medication",
+    "text": "Have you taken any stool softeners or medications for constipation? Which ones?",
+    "symptom": "constipation",
+    "data_attribute": "constipation_med_details",
+    "phase": "long"
+  },
+  {
+    "id": "constipation_long_assess_dehydration",
+    "text": "Assess for dehydration.",
+    "symptom": "constipation",
+    "data_attribute": "dehydration_assessment",
+    "phase": "long"
+  },  
+
+  {
+    "id": "urinary_short_reduced_output",
+    "text": "Has the amount of urine you have been outputting been drastically reduced?",
+    "symptom": "urinary_problems",
+    "data_attribute": "urine_output_pct",
+    "phase": "short"
+  },
+  {
+    "id": "urinary_short_frequency",
+    "text": "Is there an increase in how many times you are urinating?",
+    "symptom": "urinary_problems",
+    "data_attribute": "urination_frequency",
+    "phase": "short"
+  },
+  {
+    "id": "urinary_short_burning",
+    "text": "Are you experiencing any burning sensation during urination?",
+    "symptom": "urinary_problems",
+    "data_attribute": "burning_on_urination",
+    "phase": "short"
+  },
+  {
+    "id": "urinary_short_rating",
+    "text": "Rate as mild, moderate, or severe.",
+    "symptom": "urinary_problems",
+    "data_attribute": "urinary_pain_severity",
+    "phase": "short"
+  },
+  {
+    "id": "urinary_short_pelvic_pain",
+    "text": "Do you have pelvic pain from urination?",
+    "symptom": "urinary_problems",
+    "data_attribute": "pelvic_pain",
+    "phase": "short"
+  },
+  {
+    "id": "urinary_short_blood",
+    "text": "Have you noticed any blood in your urine?",
+    "symptom": "urinary_problems",
+    "data_attribute": "blood_in_urine",
+    "phase": "short"
+  },
+  {
+    "id": "urinary_long_odor",
+    "text": "Is there an odor to the urine?",
+    "symptom": "urinary_problems",
+    "data_attribute": "urine_odor",
+    "phase": "long"
+  },
+  {
+    "id": "urinary_long_drinking_fluids",
+    "text": "Are you drinking fluids normally?",
+    "symptom": "urinary_problems",
+    "data_attribute": "fluid_intake_pct",
+    "phase": "long"
+  },
+  {
+    "id": "urinary_long_diabetic",
+    "text": "Are you diabetic? If yes, what is your blood sugar running?",
+    "symptom": "urinary_problems",
+    "data_attribute": "blood_sugar",
+    "phase": "long"
+  },
+  {
+    "id": "urinary_long_self_care",
+    "text": "Are you able to perform daily self‑care activities like bathing and dressing yourself?",
+    "symptom": "urinary_problems",
+    "data_attribute": "self_care_ability",
+    "phase": "long"
+  },  
+
+  {
+    "id": "rash_short_location",
+    "text": "Where is the rash located? Select all that apply: Face; Chest; Arms; Legs; Hands/feet; Infusion site; Other.",
+    "symptom": "skin_rash",
+    "data_attribute": "rash_location",
+    "phase": "short"
+  },
+  {
+    "id": "rash_short_other_location",
+    "text": "If Other, where is the site?",
+    "symptom": "skin_rash",
+    "data_attribute": "rash_other_location",
+    "phase": "short"
+  },
+  {
+    "id": "rash_short_infusion_site_features",
+    "text": "If the rash is at the infusion site: is there swelling, blistering, redness or an open wound? Also, do you have fevers or chills?",
+    "symptom": "skin_rash",
+    "data_attribute": "infusion_site_features",
+    "phase": "short"
+  },
+  {
+    "id": "rash_short_other_sites_burden",
+    "text": "If at other sites: does it cover more than 30% of your body? Has it affected your ability to do daily activities?",
+    "symptom": "skin_rash",
+    "data_attribute": "body_coverage_pct",
+    "phase": "short"
+  },
+  {
+    "id": "rash_short_temp",
+    "text": "What is your temperature?",
+    "symptom": "skin_rash",
+    "data_attribute": "temp_f",
+    "phase": "short"
+  },
+  {
+    "id": "rash_long_duration",
+    "text": "How many days have you had it?",
+    "symptom": "skin_rash",
+    "data_attribute": "days_in_a_row",
+    "phase": "long"
+  },
+  {
+    "id": "rash_long_progression",
+    "text": "If more than 1 day: is it getting worse?",
+    "symptom": "skin_rash",
+    "data_attribute": "rash_trend",
+    "phase": "long"
+  },
+  {
+    "id": "rash_long_features",
+    "text": "Select all that apply: currently feeling unwell; broken or cracked skin; any liquid coming from rash or infusion site; swelling; warm to touch.",
+    "symptom": "skin_rash",
+    "data_attribute": "rash_features",
+    "phase": "long"
+  },  
+
+  {
+    "id": "pain_short_location",
+    "text": "Where is your pain located? Select all that apply: chest; hands or feet; mouth or throat; muscles or joints; headache; abdomen; bones or back; IV/port site; other.",
+    "symptom": "pain",
+    "data_attribute": "pain_location",
+    "phase": "short"
+  },
+  {
+    "id": "pain_short_other_location",
+    "text": "If other location, where?",
+    "symptom": "pain",
+    "data_attribute": "pain_other_location",
+    "phase": "short"
+  },
+  {
+    "id": "pain_short_rating",
+    "text": "Rate your pain severity: mild, moderate, or severe.",
+    "symptom": "pain",
+    "data_attribute": "pain_severity",
+    "phase": "short"
+  },
+  {
+    "id": "pain_short_interference",
+    "text": "Does it interfere with daily activities?",
+    "symptom": "pain",
+    "data_attribute": "pain_interferes_with_adl",
+    "phase": "short"
+  },
+  {
+    "id": "pain_short_fever",
+    "text": "Do you have a fever over 100.4°F?",
+    "symptom": "pain",
+    "data_attribute": "temp_f",
+    "phase": "short"
+  },
+  {
+    "id": "pain_long_associated",
+    "text": "Any headache, double vision, abdominal pain, vomiting, bloody or black stool?",
+    "symptom": "pain",
+    "data_attribute": "associated_symptoms",
+    "phase": "long"
+  },
+  {
+    "id": "pain_long_progression",
+    "text": "Is the pain getting worse?",
+    "symptom": "pain",
+    "data_attribute": "pain_trend",
+    "phase": "long"
+  }
+]

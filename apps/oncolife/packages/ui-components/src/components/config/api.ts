@@ -1,0 +1,1 @@
+export const SESSION_TIMEOUT_MINUTES = 60;

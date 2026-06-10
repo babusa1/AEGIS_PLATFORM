@@ -1,0 +1,13 @@
+{
+  "name": "@oncolife/shared-assets",
+  "version": "1.0.0",
+  "private": false,
+  "main": "index.ts",
+  "types": "index.ts",
+  "files": [
+    "*"
+  ],
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  }
+} 

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/logo.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/logo192.png" />
+    
+    <!-- Mobile Responsiveness -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    
+    <!-- Theme Color (Doctor - Clinical Navy) -->
+    <meta name="theme-color" content="#1E3A5F" />
+    <meta name="msapplication-navbutton-color" content="#1E3A5F" />
+    <meta name="apple-mobile-web-app-title" content="OncoLife" />
+    
+    <!-- SEO & Accessibility -->
+    <meta name="description" content="OncoLife Physician Portal - Clinical dashboard for oncology care teams." />
+    
+    <title>OncoLife - Physician Portal</title>
+    
+    <!-- Lovable-style Fonts: DM Sans (body) + Fraunces (headings) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&display=swap" rel="stylesheet" />
+    
+    <!-- Prevent FOUC (Flash of Unstyled Content) -->
+    <style>
+      html, body, #root {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        /* Warm cream background (Lovable-style) */
+        background-color: #FAF8F5;
+      }
+      
+      /* Initial loading state */
+      #root:empty::before {
+        content: '';
+        display: block;
+        width: 40px;
+        height: 40px;
+        margin: 40vh auto;
+        border: 3px solid #E8E4DD;
+        border-top-color: #1E3A5F;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>
+      <div style="padding: 20px; text-align: center; font-family: 'DM Sans', sans-serif;">
+        <h1 style="font-family: 'Fraunces', Georgia, serif;">JavaScript Required</h1>
+        <p>Please enable JavaScript to use OncoLife Physician Portal.</p>
+      </div>
+    </noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
